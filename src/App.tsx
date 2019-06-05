@@ -33,7 +33,15 @@ const App = () => {
 
       const imgData = getImageData(canvas);
       const nextFrame = await appWorker.getNextFrame(imgData);
-      ctx.putImageData(nextFrame, 0, 0);
+      ctx.putImageData(
+        nextFrame,
+        0,
+        0,
+        0,
+        0,
+        canvas.getWidth() / devicePixelRatio,
+        canvas.getHeight() / devicePixelRatio,
+      );
     }
   };
 

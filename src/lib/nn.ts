@@ -8,11 +8,11 @@ export const loadModels: () => Promise<{
   poseEncoder: tf.LayersModel;
 }> = async () => {
   const [strokeEncoder, poseEncoder, poseDecoder, allStrokes, allPoses] = await Promise.all([
-    tf.loadLayersModel('data/tfModels/encoder/model.json'),
-    tf.loadLayersModel('data/tfModels/poseEncoder/model.json'),
-    tf.loadLayersModel('data/tfModels/poseDecoder/model.json'),
-    (await fetch('data/tfModels/allStrokes.json')).json(),
-    (await fetch('data/tfModels/allPoses.json')).json(),
+    tf.loadLayersModel('models/encoder/model.json'),
+    tf.loadLayersModel('models/poseEncoder/model.json'),
+    tf.loadLayersModel('models/poseDecoder/model.json'),
+    (await fetch('models/allStrokes.json')).json(),
+    (await fetch('models/allPoses.json')).json(),
   ]);
   return {
     strokeEncoder,
