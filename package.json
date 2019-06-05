@@ -3,15 +3,35 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@tensorflow/tfjs": "^1.1.2",
+    "@types/fabric": "^2.6.14",
+    "@types/react": "^16.8.19",
+    "fabric": "^3.1.0",
+    "prettier": "^1.17.1",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
-    "react-scripts": "3.0.1"
+    "react-scripts": "3.0.1",
+    "tslint": "^5.17.0",
+    "tslint-config-airbnb": "^5.11.1",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-plugin-prettier": "^2.0.1",
+    "typescript": "^3.5.1"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "lint": "npm-run-all lint:*",
+    "lint:js": "eslint client --ext .js,.jsx --cache",
+    "lint:ts": "tslint \"src/**/*.{ts,tsx}\" -p tsconfig.json",
+    "lint:scss": "stylelint \"./src/**/*.scss\" --cache",
+    "lint:prettier": "prettier \"src/**/*.{js,jsx,ts,tsx,scss}\" --list-different",
+    "fix": "npm-run-all fix:*",
+    "fix:scss": "npm run lint:scss -- --fix",
+    "fix:ts": "npm run lint:ts -- --fix",
+    "fix:js": "npm run lint:js -- --fix",
+    "fix:prettier": "prettier \"src/**/*.{js,jsx,ts,tsx,scss}\" --write"
   },
   "eslintConfig": {
     "extends": "react-app"
