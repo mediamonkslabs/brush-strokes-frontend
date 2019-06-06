@@ -39,8 +39,8 @@ const App = () => {
         0,
         0,
         0,
-        canvas.getWidth() / devicePixelRatio,
-        canvas.getHeight() / devicePixelRatio,
+        canvas.getWidth(),
+        canvas.getHeight(),
       );
     }
   };

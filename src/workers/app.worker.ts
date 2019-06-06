@@ -85,9 +85,17 @@ export class AppWorker {
 
     const closestVector = getClosestVector(currentPrediction, this.allStrokes);
     const predictedPose = predictPose(this.allPoses[closestVector], this.poseDecoder);
-    const outImg = postprocess(predictedPose, imgData.width, imgData.height);
+    const outImg = postprocess(
+      predictedPose,
+      imgData.width / devicePixelRatio,
+      imgData.height / devicePixelRatio,
+    );
 
-    return new ImageData(await tf.browser.toPixels(outImg), imgData.width, imgData.height);
+    return new ImageData(
+      await tf.browser.toPixels(outImg),
+      imgData.width / devicePixelRatio,
+      imgData.height / devicePixelRatio,
+    );
   }
 
   public async init() {
