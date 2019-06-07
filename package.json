@@ -8,7 +8,9 @@
     "@types/react": "^16.8.19",
     "comlink": "^4.0.1",
     "comlink-loader": "^1.1.0",
+    "husky": "^2.4.0",
     "jest-canvas-mock": "^2.1.0",
+    "lint-staged": "^8.2.0",
     "npm-run-all": "^4.1.5",
     "prettier": "^1.17.1",
     "react": "^16.8.6",
@@ -40,7 +42,14 @@
     "fix:css": "npm run lint:css -- --fix",
     "fix:ts": "npm run lint:ts -- --fix",
     "fix:js": "npm run lint:js -- --fix",
-    "fix:prettier": "prettier \"src/**/*.{js,jsx,ts,tsx,css}\" --write"
+    "fix:prettier": "prettier \"src/**/*.{js,jsx,ts,tsx,css}\" --write",
+    "preinstall": "npx use-yarn"
+  },
+  "husky": {
+    "hooks": {
+      "post-commit": "git reset",
+      "pre-commit": "lint-staged"
+    }
   },
   "eslintConfig": {
     "extends": "react-app"
