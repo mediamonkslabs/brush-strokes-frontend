@@ -1,4 +1,4 @@
-import React, { createRef, useEffect, useState } from 'react';
+import React, { createRef, useCallback, useEffect, useState } from 'react';
 import styles from './App.module.css';
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import { NNWorker } from './workers/app.worker';
@@ -23,7 +23,7 @@ const App = () => {
     if (outCanvasRef.current !== null && canvasAnimator === null) {
       setDrawableCanvasAnimator(new CanvasAnimator(outCanvasRef.current));
     }
-  }, [canvasAnimator, outCanvasRef.current]);
+  }, [canvasAnimator, outCanvasRef]);
 
   useEffect(() => {
     (async () => {
@@ -35,39 +35,42 @@ const App = () => {
         setNNDataLoading(false);
       }
     })();
-  }, [appWorker]);
+  }, [appWorker, nnDataLoading]);
 
-  const listener = async (next: ImageData) => {
-    if (appWorker !== null && outCanvasRef.current !== null) {
-      const ctx = outCanvasRef.current.getContext('2d');
+  const listener = useCallback(
+    async (next: ImageData) => {
+      if (appWorker !== null && outCanvasRef.current !== null) {
+        const ctx = outCanvasRef.current.getContext('2d');
 
-      if (ctx === null) {
-        return;
-      }
+        if (ctx === null) {
+          return;
+        }
 
-      if (appState === AppState.INITIAL_DRAW) {
-        setDrawnFrames([next]);
-        setAppState(AppState.CONTINUE_DRAW);
-        return;
-      }
+        if (appState === AppState.INITIAL_DRAW) {
+          setDrawnFrames([next]);
+          setAppState(AppState.CONTINUE_DRAW);
+          return;
+        }
 
-      if (appState === AppState.CONTINUE_DRAW) {
-        // generate animation
-        const previous = drawnFrames[drawnFrames.length - 1];
-        const nextFrames = await appWorker.getNextFrame(previous, next);
+        if (appState === AppState.CONTINUE_DRAW) {
+          // generate animation
+          const previous = drawnFrames[drawnFrames.length - 1];
+          const nextFrames = await appWorker.getNextFrame(previous, next);
 
-        debugDrawImageData(previous);
-        debugDrawImageData(next);
+          debugDrawImageData(previous);
+          debugDrawImageData(next);
 
-        setDrawnFrames([...drawnFrames, next]);
+          setDrawnFrames([...drawnFrames, next]);
 
-        if (canvasAnimator !== null) {
-          canvasAnimator.addFrames(nextFrames);
-          canvasAnimator.animate();
+          if (canvasAnimator !== null) {
+            canvasAnimator.addFrames(nextFrames);
+            canvasAnimator.animate();
+          }
         }
       }
-    }
-  };
+    },
+    [appWorker, outCanvasRef, appState, drawnFrames, canvasAnimator],
+  );
 
   return (
     <div className="App">

@@ -1,4 +1,4 @@
-import React, { createRef, PointerEvent, useEffect, useState } from 'react';
+import React, { createRef, PointerEvent, useCallback, useEffect, useState } from 'react';
 import { get2DContext, scaleImage } from '../../lib/canvas';
 
 export interface Props {
@@ -7,39 +7,39 @@ export interface Props {
   onDraw: (imageData: ImageData) => void;
 }
 
+const clear = (ctx: CanvasRenderingContext2D) => {
+  if (ctx === null) {
+    return;
+  }
+
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 10 * devicePixelRatio;
+  ctx.lineJoin = ctx.lineCap = 'round';
+  ctx.filter = 'blur(8px)';
+};
+
+const drawBetweenPoints = (
+  context: CanvasRenderingContext2D,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+) => {
+  context.beginPath();
+  context.moveTo(x1, y1);
+  context.lineTo(x2, y2);
+  context.stroke();
+  context.closePath();
+};
+
 const DrawableCanvas: React.FunctionComponent<Props> = ({ width, height, onDraw }) => {
   const canvasRef = createRef<HTMLCanvasElement>();
   const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
   const [previousMouse, setPreviousMouse] = useState<{ x: number; y: number }>({ x: -1, y: -1 });
   const [mouseDown, setMouseDown] = useState<boolean>(false);
-
-  const drawFromPrevious = (x: number, y: number) => {
-    if (context === null) {
-      return;
-    }
-
-    context.beginPath();
-    context.moveTo(previousMouse.x, previousMouse.y);
-    context.lineTo(x, y);
-    context.stroke();
-    context.closePath();
-
-    setPreviousMouse({ x, y });
-  };
-
-  const clear = (ctx = context) => {
-    if (ctx === null) {
-      return;
-    }
-
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 10 * devicePixelRatio;
-    ctx.lineJoin = ctx.lineCap = 'round';
-    ctx.filter = 'blur(8px)';
-  };
 
   const pointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     setPreviousMouse({
@@ -49,12 +49,18 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({ width, height, onDraw 
     setMouseDown(true);
   };
 
-  const pointerUp = () => {
+  const pointerUp = useCallback(() => {
     // drawFromPrevious(event.offsetX, event.offsetY);
+    if (!mouseDown) {
+      return;
+    }
+
     setMouseDown(false);
+
     if (context === null) {
       return;
     }
+
     onDraw(
       scaleImage(
         context.getImageData(0, 0, context.canvas.width, context.canvas.height),
@@ -62,25 +68,38 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({ width, height, onDraw 
         context.canvas.height / devicePixelRatio,
       ),
     );
-    clear();
-  };
+    clear(context);
+  }, [context, mouseDown, onDraw]);
 
-  const pointerMove = (event: React.PointerEvent) => {
-    if (mouseDown) {
-      drawFromPrevious(
-        event.nativeEvent.offsetX * devicePixelRatio,
-        event.nativeEvent.offsetY * devicePixelRatio,
-      );
+  const pointerMove = useCallback(
+    (event: React.PointerEvent) => {
+      if (context === null) {
+        return;
+      }
+      if (mouseDown) {
+        const x = event.nativeEvent.offsetX * devicePixelRatio;
+        const y = event.nativeEvent.offsetY * devicePixelRatio;
+
+        drawBetweenPoints(context, previousMouse.x, previousMouse.y, x, y);
+
+        setPreviousMouse({ x, y });
+      }
+    },
+    [context, mouseDown, previousMouse],
+  );
+
+  useEffect(() => {
+    if (context !== null) {
+      clear(context);
     }
-  };
+  }, [context]);
 
   useEffect(() => {
     if (canvasRef.current !== null && context === null) {
       const newContext = get2DContext(canvasRef.current);
-      clear(newContext);
       setContext(newContext);
     }
-  }, [canvasRef]);
+  }, [canvasRef, context]);
 
   return (
     <canvas
