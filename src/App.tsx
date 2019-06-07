@@ -1,68 +1,31 @@
 import React, { createRef, useEffect, useState } from 'react';
 import styles from './App.module.css';
-import { fabric } from 'fabric';
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import { AppWorker } from './workers/app.worker';
+import { CanvasAnimator } from './canvas-animator';
+import { scaleImage } from './lib/canvas';
+import DrawableCanvas from './components/DrawableCanvas';
 
-const getImageData = (canvas: fabric.Canvas): ImageData => {
-  // get image data according to dpi
-  const dpi = window.devicePixelRatio;
-  const x = 0;
-  const y = 0;
-  const w = canvas.getWidth() * dpi;
-  const h = canvas.getHeight() * dpi;
-  const imgData = canvas.getContext().getImageData(x, y, w, h);
-  return imgData;
-};
+enum AppState {
+  INITIAL_DRAW,
+  CONTINUE_DRAW,
+}
 
 const App = () => {
-  const canvasRef = createRef<HTMLCanvasElement>();
+  const [appState, setAppState] = useState(AppState.INITIAL_DRAW);
+  const [drawnFrames, setDrawnFrames] = useState<Array<ImageData>>([]);
   const outCanvasRef = createRef<HTMLCanvasElement>();
-  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [appWorker, setAppWorker] = useState<AppWorker | null>(null);
-
+  const [canvasAnimator, setDrawableCanvasAnimator] = useState<CanvasAnimator | null>(null);
   const [nnDataLoading, setNNDataLoading] = useState(false);
 
-  const onMouseUp = async () => {
-    if (appWorker !== null && canvas !== null && outCanvasRef.current !== null) {
-      const ctx = outCanvasRef.current.getContext('2d');
-
-      if (ctx === null) {
-        return;
-      }
-
-      const imgData = getImageData(canvas);
-      const nextFrame = await appWorker.getNextFrame(imgData);
-      ctx.putImageData(
-        nextFrame,
-        0,
-        0,
-        0,
-        0,
-        canvas.getWidth(),
-        canvas.getHeight(),
-      );
+  useEffect(() => {
+    if (outCanvasRef.current !== null && canvasAnimator === null) {
+      setDrawableCanvasAnimator(new CanvasAnimator(outCanvasRef.current));
     }
-  };
-
-  if (canvas !== null) {
-    canvas.off('mouse:up', onMouseUp);
-    canvas.on('mouse:up', onMouseUp);
-  }
+  }, [canvasAnimator, outCanvasRef.current]);
 
   useEffect(() => {
-    if (canvasRef.current !== null && canvas === null) {
-      const canvas = new fabric.Canvas(canvasRef.current);
-      canvas.backgroundColor = '#ffffff';
-      canvas.isDrawingMode = true;
-      canvas.freeDrawingBrush.color = 'rgba(0, 0, 0, 1.0)';
-      canvas.freeDrawingBrush.width = 10;
-      canvas.getContext().filter = 'blur(8px)';
-      canvas.renderAll();
-
-      setCanvas(canvas);
-    }
-
     (async () => {
       if (appWorker === null && nnDataLoading === false) {
         setNNDataLoading(true);
@@ -72,13 +35,50 @@ const App = () => {
         setNNDataLoading(false);
       }
     })();
-  });
+  }, [appWorker]);
+
+  const listener = async (next: ImageData) => {
+    if (appWorker !== null && outCanvasRef.current !== null) {
+      const ctx = outCanvasRef.current.getContext('2d');
+
+      const scaled = scaleImage(next, next.width, next.height);
+
+      if (ctx === null) {
+        return;
+      }
+
+      if (appState === AppState.INITIAL_DRAW) {
+        setDrawnFrames([scaled]);
+        setAppState(AppState.CONTINUE_DRAW);
+        return;
+      }
+
+      if (appState === AppState.CONTINUE_DRAW) {
+        // generate animation
+        const previous = drawnFrames[drawnFrames.length - 1];
+        const nextFrames = await appWorker.getNextFrame(previous, scaled);
+
+        setDrawnFrames([...drawnFrames, scaled]);
+
+        if (canvasAnimator !== null) {
+          canvasAnimator.addFrames(nextFrames);
+          canvasAnimator.animate();
+        }
+      }
+    }
+  };
 
   return (
     <div className="App">
-      <canvas ref={canvasRef} width="512" height="256" className={styles.canvas} />
-      <canvas ref={outCanvasRef} width="512" height="256" className={styles.canvas} />
+      <div>
+        {appState === AppState.INITIAL_DRAW && <p>Draw initial pose</p>}
 
+        {appState === AppState.CONTINUE_DRAW && <p>Continue drawing poses</p>}
+      </div>
+      <div>
+        <DrawableCanvas width={512} height={256} onDraw={listener} />
+        <canvas ref={outCanvasRef} width="512" height="256" className={styles.canvas} />
+      </div>
       {nnDataLoading && (
         <div className={styles.loading}>
           <p>Loading models</p>

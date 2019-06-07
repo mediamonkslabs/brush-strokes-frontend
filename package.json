@@ -4,11 +4,9 @@
   "private": true,
   "dependencies": {
     "@tensorflow/tfjs": "^1.1.2",
-    "@types/fabric": "^2.6.14",
     "@types/react": "^16.8.19",
     "comlink": "^4.0.1",
     "comlink-loader": "^1.1.0",
-    "fabric": "^3.1.0",
     "prettier": "^1.17.1",
     "react": "^16.8.6",
     "react-app-rewired": "^2.1.3",
