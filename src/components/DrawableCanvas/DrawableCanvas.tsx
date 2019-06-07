@@ -67,7 +67,7 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({ width, height, onDraw 
   };
 
   const pointerMove = (event: React.PointerEvent) => {
-    if (mouseDown === true) {
+    if (mouseDown) {
       drawFromPrevious(
         event.nativeEvent.offsetX * devicePixelRatio,
         event.nativeEvent.offsetY * devicePixelRatio,

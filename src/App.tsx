@@ -27,7 +27,7 @@ const App = () => {
 
   useEffect(() => {
     (async () => {
-      if (appWorker === null && nnDataLoading === false) {
+      if (appWorker === null && !nnDataLoading) {
         setNNDataLoading(true);
         const worker: AppWorker = await new AppWorker();
         await worker.init();
