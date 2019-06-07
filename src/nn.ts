@@ -133,6 +133,7 @@ export class NN {
     if (this.strokeEncoder === undefined || this.allStrokes === undefined) {
       throw this.notLoadedError();
     }
+
     const prediction = this.predictStroke(imageData).arraySync() as number[][];
     return this.getClosestVector(prediction);
   }

@@ -32,14 +32,13 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({ width, height, onDraw 
       return;
     }
 
-    ctx.fillStyle = '#fff';
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.strokeStyle = 'black';
+    ctx.strokeStyle = '#000000';
     ctx.lineWidth = 10 * devicePixelRatio;
     ctx.lineJoin = ctx.lineCap = 'round';
     ctx.filter = 'blur(8px)';
-
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   };
 
   const pointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
