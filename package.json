@@ -2,11 +2,17 @@
   "name": "tfjs",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://mediamonkslabs.github.io/brush-strokes-frontend/",
   "dependencies": {
     "@tensorflow/tfjs": "^1.1.2",
+    "@types/jest": "^24.0.13",
     "@types/react": "^16.8.19",
     "comlink": "^4.0.1",
     "comlink-loader": "^1.1.0",
+    "husky": "^2.4.0",
+    "jest-canvas-mock": "^2.1.0",
+    "lint-staged": "^8.2.0",
+    "npm-run-all": "^4.1.5",
     "prettier": "^1.17.1",
     "react": "^16.8.6",
     "react-app-rewired": "^2.1.3",
@@ -29,7 +35,7 @@
     "test": "react-app-rewired test",
     "eject": "react-app-rewired eject",
     "lint": "npm-run-all lint:*",
-    "lint:js": "eslint client --ext .js,.jsx --cache",
+    "lint:js": "eslint src --ext .js,.jsx --cache",
     "lint:ts": "tslint \"src/**/*.{ts,tsx}\" -p tsconfig.json",
     "lint:css": "stylelint \"./src/**/*.css\" --cache",
     "lint:prettier": "prettier \"src/**/*.{js,jsx,ts,tsx,css}\" --list-different",
@@ -37,7 +43,14 @@
     "fix:css": "npm run lint:css -- --fix",
     "fix:ts": "npm run lint:ts -- --fix",
     "fix:js": "npm run lint:js -- --fix",
-    "fix:prettier": "prettier \"src/**/*.{js,jsx,ts,tsx,css}\" --write"
+    "fix:prettier": "prettier \"src/**/*.{js,jsx,ts,tsx,css}\" --write",
+    "preinstall": "npx use-yarn"
+  },
+  "husky": {
+    "hooks": {
+      "post-commit": "git reset",
+      "pre-commit": "lint-staged"
+    }
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -52,6 +65,11 @@
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"
+    ]
+  },
+  "jest": {
+    "setupFiles": [
+      "jest-canvas-mock"
     ]
   }
 }

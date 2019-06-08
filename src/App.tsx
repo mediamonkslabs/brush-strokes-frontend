@@ -1,9 +1,9 @@
-import React, { createRef, useEffect, useState } from 'react';
+import React, { createRef, useCallback, useEffect, useState } from 'react';
 import styles from './App.module.css';
 // eslint-disable-next-line import/no-webpack-loader-syntax
-import { AppWorker } from './workers/app.worker';
+import { NNWorker } from './workers/app.worker';
 import { CanvasAnimator } from './canvas-animator';
-import { scaleImage } from './lib/canvas';
+import { debugDrawImageData } from './lib/canvas';
 import DrawableCanvas from './components/DrawableCanvas';
 
 enum AppState {
@@ -15,7 +15,7 @@ const App = () => {
   const [appState, setAppState] = useState(AppState.INITIAL_DRAW);
   const [drawnFrames, setDrawnFrames] = useState<Array<ImageData>>([]);
   const outCanvasRef = createRef<HTMLCanvasElement>();
-  const [appWorker, setAppWorker] = useState<AppWorker | null>(null);
+  const [appWorker, setAppWorker] = useState<NNWorker | null>(null);
   const [canvasAnimator, setDrawableCanvasAnimator] = useState<CanvasAnimator | null>(null);
   const [nnDataLoading, setNNDataLoading] = useState(false);
 
@@ -23,50 +23,54 @@ const App = () => {
     if (outCanvasRef.current !== null && canvasAnimator === null) {
       setDrawableCanvasAnimator(new CanvasAnimator(outCanvasRef.current));
     }
-  }, [canvasAnimator, outCanvasRef.current]);
+  }, [canvasAnimator, outCanvasRef]);
 
   useEffect(() => {
     (async () => {
-      if (appWorker === null && nnDataLoading === false) {
+      if (appWorker === null && !nnDataLoading) {
         setNNDataLoading(true);
-        const worker: AppWorker = await new AppWorker();
+        const worker: NNWorker = await new NNWorker();
         await worker.init();
         setAppWorker(worker);
         setNNDataLoading(false);
       }
     })();
-  }, [appWorker]);
+  }, [appWorker, nnDataLoading]);
 
-  const listener = async (next: ImageData) => {
-    if (appWorker !== null && outCanvasRef.current !== null) {
-      const ctx = outCanvasRef.current.getContext('2d');
+  const listener = useCallback(
+    async (next: ImageData) => {
+      if (appWorker !== null && outCanvasRef.current !== null) {
+        const ctx = outCanvasRef.current.getContext('2d');
 
-      const scaled = scaleImage(next, next.width, next.height);
+        if (ctx === null) {
+          return;
+        }
 
-      if (ctx === null) {
-        return;
-      }
+        if (appState === AppState.INITIAL_DRAW) {
+          setDrawnFrames([next]);
+          setAppState(AppState.CONTINUE_DRAW);
+          return;
+        }
 
-      if (appState === AppState.INITIAL_DRAW) {
-        setDrawnFrames([scaled]);
-        setAppState(AppState.CONTINUE_DRAW);
-        return;
-      }
+        if (appState === AppState.CONTINUE_DRAW) {
+          // generate animation
+          const previous = drawnFrames[drawnFrames.length - 1];
+          const nextFrames = await appWorker.getNextFrame(previous, next);
 
-      if (appState === AppState.CONTINUE_DRAW) {
-        // generate animation
-        const previous = drawnFrames[drawnFrames.length - 1];
-        const nextFrames = await appWorker.getNextFrame(previous, scaled);
+          debugDrawImageData(previous);
+          debugDrawImageData(next);
 
-        setDrawnFrames([...drawnFrames, scaled]);
+          setDrawnFrames([...drawnFrames, next]);
 
-        if (canvasAnimator !== null) {
-          canvasAnimator.addFrames(nextFrames);
-          canvasAnimator.animate();
+          if (canvasAnimator !== null) {
+            canvasAnimator.addFrames(nextFrames);
+            canvasAnimator.animate();
+          }
         }
       }
-    }
-  };
+    },
+    [appWorker, outCanvasRef, appState, drawnFrames, canvasAnimator],
+  );
 
   return (
     <div className="App">

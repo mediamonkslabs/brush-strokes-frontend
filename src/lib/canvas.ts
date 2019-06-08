@@ -8,7 +8,7 @@ export const get2DContext = (canvas: HTMLCanvasElement): CanvasRenderingContext2
   return ctx;
 };
 
-const createCanvas = (width: number, height: number): CanvasRenderingContext2D => {
+export const createCanvas = (width: number, height: number): CanvasRenderingContext2D => {
   const c = document.createElement('canvas');
   c.setAttribute('width', width.toString());
   c.setAttribute('height', height.toString());

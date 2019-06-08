@@ -17,11 +17,11 @@ export const startAnimationFrame = (
       return;
     }
 
-    rafId = requestAnimationFrame(frame);
+    rafId = window.requestAnimationFrame(frame);
     callback(time - startTime, cancel);
   };
 
-  rafId = requestAnimationFrame(frame);
+  rafId = window.requestAnimationFrame(frame);
 
   return cancel;
 };
