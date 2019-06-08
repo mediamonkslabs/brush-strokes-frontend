@@ -152,6 +152,24 @@ export class NN {
     return new Error('AppWorker not initialized: call init() first.');
   }
 
+  public async getFrame(imageData: ImageData) {
+    if (
+      this.strokeEncoder === undefined ||
+      this.allStrokes === undefined ||
+      this.poseDecoder === undefined ||
+      this.allPoses === undefined
+    ) {
+      throw this.notLoadedError();
+    }
+
+    const latentVector = await this.getLatentVector(imageData);
+    const newVector = this.allPoses[latentVector];
+
+    const data = await this.generateImageFromVector(newVector, imageData.width, imageData.height);
+
+    return new ImageData(await tf.browser.toPixels(data), imageData.width, imageData.height);
+  }
+
   public async getNextFrame(previous: ImageData, next: ImageData): Promise<Array<ImageData>> {
     if (
       this.strokeEncoder === undefined ||

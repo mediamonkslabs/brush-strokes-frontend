@@ -39,7 +39,7 @@ const App = () => {
 
   const listener = useCallback(
     async (next: ImageData) => {
-      if (appWorker !== null && outCanvasRef.current !== null) {
+      if (appWorker !== null && outCanvasRef.current !== null && canvasAnimator !== null) {
         const ctx = outCanvasRef.current.getContext('2d');
 
         if (ctx === null) {
@@ -49,6 +49,9 @@ const App = () => {
         if (appState === AppState.INITIAL_DRAW) {
           setDrawnFrames([next]);
           setAppState(AppState.CONTINUE_DRAW);
+
+          const result = await appWorker.getFrame(next);
+          canvasAnimator.drawImage(result);
           return;
         }
 
@@ -57,15 +60,10 @@ const App = () => {
           const previous = drawnFrames[drawnFrames.length - 1];
           const nextFrames = await appWorker.getNextFrame(previous, next);
 
-          debugDrawImageData(previous);
-          debugDrawImageData(next);
-
           setDrawnFrames([...drawnFrames, next]);
 
-          if (canvasAnimator !== null) {
-            canvasAnimator.addFrames(nextFrames);
-            canvasAnimator.animate();
-          }
+          canvasAnimator.addFrames(nextFrames);
+          canvasAnimator.animate();
         }
       }
     },
