@@ -1,15 +1,17 @@
 import React, { createRef, useCallback, useEffect, useState } from 'react';
 import styles from './App.module.css';
-// eslint-disable-next-line import/no-webpack-loader-syntax
 import { NNWorker } from './workers/app.worker';
 import { CanvasAnimator } from './canvas-animator';
-import { debugDrawImageData } from './lib/canvas';
 import DrawableCanvas from './components/DrawableCanvas';
+import useElementFit, { ScaleMode } from './hooks/use-element-fit';
 
 enum AppState {
   INITIAL_DRAW,
   CONTINUE_DRAW,
 }
+
+const CANVAS_WIDTH = 512;
+const CANVAS_HEIGHT = 256;
 
 const App = () => {
   const [appState, setAppState] = useState(AppState.INITIAL_DRAW);
@@ -18,6 +20,14 @@ const App = () => {
   const [appWorker, setAppWorker] = useState<NNWorker | null>(null);
   const [canvasAnimator, setDrawableCanvasAnimator] = useState<CanvasAnimator | null>(null);
   const [nnDataLoading, setNNDataLoading] = useState(false);
+
+  const {
+    ref: canvasContainerRef,
+    width: canvasWidth,
+    height: canvasHeight,
+    x: canvasX,
+    y: canvasY,
+  } = useElementFit(CANVAS_WIDTH, CANVAS_HEIGHT, ScaleMode.COVER);
 
   useEffect(() => {
     if (outCanvasRef.current !== null && canvasAnimator === null) {
@@ -71,15 +81,36 @@ const App = () => {
   );
 
   return (
-    <div className="App">
-      <div>
+    <div>
+      <div className={styles.title}>
         {appState === AppState.INITIAL_DRAW && <p>Draw initial pose</p>}
 
         {appState === AppState.CONTINUE_DRAW && <p>Continue drawing poses</p>}
       </div>
-      <div>
-        <DrawableCanvas width={512} height={256} onDraw={listener} />
-        <canvas ref={outCanvasRef} width="512" height="256" className={styles.canvas} />
+      <div className={styles.canvasContainer} ref={canvasContainerRef}>
+        <div
+          className={styles.canvasScaleContainer}
+          style={{
+            width: `${canvasWidth}px`,
+            height: `${canvasHeight}px`,
+            left: `${canvasX}px`,
+            top: `${canvasY}px`,
+          }}
+        >
+          <canvas
+            ref={outCanvasRef}
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+            className={styles.canvas}
+          />
+          <DrawableCanvas
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+            onDraw={listener}
+            scaleX={canvasWidth / CANVAS_WIDTH}
+            scaleY={canvasHeight / CANVAS_HEIGHT}
+          />
+        </div>
       </div>
       {nnDataLoading && (
         <div className={styles.loading}>
