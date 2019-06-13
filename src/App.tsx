@@ -1,9 +1,9 @@
-import React, { createRef, useCallback, useEffect, useState } from 'react';
+import React, { createRef, RefObject, useCallback, useEffect, useState } from 'react';
 import styles from './App.module.css';
 import { NNWorker } from './workers/app.worker';
 import { CanvasAnimator } from './canvas-animator';
 import DrawableCanvas from './components/DrawableCanvas';
-import useElementFit, { ScaleMode } from './hooks/use-element-fit';
+import { ScaleMode, useElementFit } from 'use-element-fit';
 
 enum AppState {
   INITIAL_DRAW,
@@ -87,7 +87,7 @@ const App = () => {
 
         {appState === AppState.CONTINUE_DRAW && <p>Continue drawing poses</p>}
       </div>
-      <div className={styles.canvasContainer} ref={canvasContainerRef}>
+      <div className={styles.canvasContainer} ref={canvasContainerRef as RefObject<HTMLDivElement>}>
         <div
           className={styles.canvasScaleContainer}
           style={{

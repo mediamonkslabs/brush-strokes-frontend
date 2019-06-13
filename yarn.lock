@@ -10883,6 +10883,13 @@ url@^0.11.0:
     punycode "1.3.2"
     querystring "0.2.0"
 
+use-element-fit@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/use-element-fit/-/use-element-fit-0.0.1.tgz#03e62d89b6451f62069df742a5ccc36607c4fa15"
+  integrity sha512-LAx9/o9kg1Bvfsyjvme1jVnBmg8Z554S/lPBhvpUVfDg3MJigx8QrljyO3kk93ER5vCWhtPJkEAcdZLch0JDaw==
+  dependencies:
+    use-resize-observer "^3.1.0"
+
 use-resize-observer@^3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/use-resize-observer/-/use-resize-observer-3.1.0.tgz#138406ca9d34f3f2be95ab8b5829734a927cc2a7"
