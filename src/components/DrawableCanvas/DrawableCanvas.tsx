@@ -1,10 +1,12 @@
 import React, { createRef, PointerEvent, useCallback, useEffect, useState } from 'react';
-import { get2DContext, scaleImage } from '../../lib/canvas';
+import { applyBackground, get2DContext, scaleImage } from '../../lib/canvas';
 
 export interface Props {
   width: number;
   height: number;
   onDraw: (imageData: ImageData) => void;
+  scaleX: number;
+  scaleY: number;
 }
 
 const clear = (ctx: CanvasRenderingContext2D) => {
@@ -13,8 +15,6 @@ const clear = (ctx: CanvasRenderingContext2D) => {
   }
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   ctx.strokeStyle = '#000000';
   ctx.lineWidth = 10 * devicePixelRatio;
   ctx.lineJoin = ctx.lineCap = 'round';
@@ -35,7 +35,13 @@ const drawBetweenPoints = (
   context.closePath();
 };
 
-const DrawableCanvas: React.FunctionComponent<Props> = ({ width, height, onDraw }) => {
+const DrawableCanvas: React.FunctionComponent<Props> = ({
+  width,
+  height,
+  onDraw,
+  scaleX,
+  scaleY,
+}) => {
   const canvasRef = createRef<HTMLCanvasElement>();
   const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
   const [previousMouse, setPreviousMouse] = useState<{ x: number; y: number }>({ x: -1, y: -1 });
@@ -62,10 +68,13 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({ width, height, onDraw 
     }
 
     onDraw(
-      scaleImage(
-        context.getImageData(0, 0, context.canvas.width, context.canvas.height),
-        context.canvas.width / devicePixelRatio,
-        context.canvas.height / devicePixelRatio,
+      applyBackground(
+        scaleImage(
+          context.getImageData(0, 0, context.canvas.width, context.canvas.height),
+          context.canvas.width / devicePixelRatio,
+          context.canvas.height / devicePixelRatio,
+        ),
+        '#ffffff',
       ),
     );
     clear(context);
@@ -80,7 +89,13 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({ width, height, onDraw 
         const x = event.nativeEvent.offsetX * devicePixelRatio;
         const y = event.nativeEvent.offsetY * devicePixelRatio;
 
-        drawBetweenPoints(context, previousMouse.x, previousMouse.y, x, y);
+        drawBetweenPoints(
+          context,
+          previousMouse.x / scaleX,
+          previousMouse.y / scaleY,
+          x / scaleX,
+          y / scaleY,
+        );
 
         setPreviousMouse({ x, y });
       }
@@ -106,10 +121,6 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({ width, height, onDraw 
       width={width * devicePixelRatio}
       ref={canvasRef}
       height={height * devicePixelRatio}
-      style={{
-        width: `${width}px`,
-        height: `${height}px`,
-      }}
       onPointerMove={pointerMove}
       onPointerUp={pointerUp}
       onPointerDown={pointerDown}

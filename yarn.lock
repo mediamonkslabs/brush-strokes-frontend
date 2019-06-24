@@ -9300,6 +9300,11 @@ requires-port@^1.0.0:
   resolved "https://registry.yarnpkg.com/requires-port/-/requires-port-1.0.0.tgz#925d2601d39ac485e091cf0da5c6e694dc3dcaff"
   integrity sha1-kl0mAdOaxIXgkc8NpcbmlNw9yv8=
 
+resize-observer-polyfill@^1.5.0:
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/resize-observer-polyfill/-/resize-observer-polyfill-1.5.1.tgz#0e9020dd3d21024458d4ebd27e23e40269810464"
+  integrity sha512-LwZrotdHOo12nQuZlHEmtuXdqGoOD0OhaxopaNFxWzInpEgaLWoVuAMbTzixuosCx2nEG58ngzW3vxdWoxIgdg==
+
 resolve-cwd@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/resolve-cwd/-/resolve-cwd-2.0.0.tgz#00a9f7387556e27038eae232caa372a6a59b665a"
@@ -10877,6 +10882,20 @@ url@^0.11.0:
   dependencies:
     punycode "1.3.2"
     querystring "0.2.0"
+
+use-element-fit@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/use-element-fit/-/use-element-fit-0.4.0.tgz#058c0b21e9c5d9d19a26dffa6c86fdbde42f1961"
+  integrity sha512-qXTNhqEfWk1ePhaP4UMxDo/lKdg/xbSCruSdjesdbiq9H3CpQGVN+aNxpO278YYxByydBL5h6IJp5in0UWYbCw==
+  dependencies:
+    use-resize-observer "^3.1.0"
+
+use-resize-observer@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/use-resize-observer/-/use-resize-observer-3.1.0.tgz#138406ca9d34f3f2be95ab8b5829734a927cc2a7"
+  integrity sha512-g9eIqzZUtxW6/S0+fe79ZuDeYxk7c9R3iArv3YOkkgY7IfJHJxIXglVhmxKRovprcEqfZ+6yq30MbQ5WjdhXQw==
+  dependencies:
+    resize-observer-polyfill "^1.5.0"
 
 use@^3.1.0:
   version "3.1.1"

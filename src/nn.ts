@@ -54,7 +54,7 @@ function slerp(a: Array<number>, b: Array<number>, t: number): Array<number> {
 export class NN {
   private poseDecoder: tf.LayersModel | undefined;
   private strokeEncoder: tf.LayersModel | undefined;
-  private allPoses: Array<Array<number>> | undefined;
+  private allPoses: Array<Array<Array<number>>> | undefined;
   private allStrokes: Array<Array<number>> | undefined;
   private poseEncoder: tf.LayersModel | undefined;
 
@@ -97,6 +97,7 @@ export class NN {
       if (this.allStrokes === undefined) {
         throw this.notLoadedError();
       }
+
       const dist = eucDistance(prediction[0], vector);
       if (dist < distWinner) {
         distWinner = dist;
@@ -121,7 +122,7 @@ export class NN {
         throw this.notLoadedError();
       }
       let tensor = tf.tensor(closest);
-      tensor = tensor.reshape([1, 1, 128]);
+      tensor = tensor.reshape([1, 20]);
       // get the prediction
       const posePred = this.poseDecoder.predict(tensor);
 
@@ -152,6 +153,24 @@ export class NN {
     return new Error('AppWorker not initialized: call init() first.');
   }
 
+  public async getFrame(imageData: ImageData) {
+    if (
+      this.strokeEncoder === undefined ||
+      this.allStrokes === undefined ||
+      this.poseDecoder === undefined ||
+      this.allPoses === undefined
+    ) {
+      throw this.notLoadedError();
+    }
+
+    const latentVector = await this.getLatentVector(imageData);
+    const newVector = this.allPoses[latentVector][0];
+
+    const data = await this.generateImageFromVector(newVector, imageData.width, imageData.height);
+
+    return new ImageData(await tf.browser.toPixels(data), imageData.width, imageData.height);
+  }
+
   public async getNextFrame(previous: ImageData, next: ImageData): Promise<Array<ImageData>> {
     if (
       this.strokeEncoder === undefined ||
@@ -179,8 +198,8 @@ export class NN {
         }
 
         const newVector = slerp(
-          this.allPoses[previousLatentVector],
-          this.allPoses[nextLatentVector],
+          this.allPoses[previousLatentVector][0],
+          this.allPoses[nextLatentVector][0],
           val,
         );
 

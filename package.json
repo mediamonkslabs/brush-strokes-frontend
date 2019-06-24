@@ -27,6 +27,7 @@
     "tslint-config-prettier": "^1.18.0",
     "tslint-plugin-prettier": "^2.0.1",
     "typescript": "^3.5.1",
+    "use-element-fit": "^0.4.0",
     "worker-loader": "^2.0.0"
   },
   "scripts": {

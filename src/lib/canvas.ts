@@ -42,3 +42,14 @@ export const debugDrawImageData = (data: ImageData) => {
 
   ctx.putImageData(data, 0, 0, 0, 0, data.width, data.height);
 };
+
+export const applyBackground = (imageData: ImageData, background: string): ImageData => {
+  const outCanvas = createCanvas(imageData.width, imageData.height);
+  const imageCanvas = createCanvasFromImageData(imageData);
+
+  outCanvas.fillStyle = background;
+  outCanvas.fillRect(0, 0, imageData.width, imageData.height);
+  outCanvas.drawImage(imageCanvas.canvas, 0, 0);
+
+  return outCanvas.getImageData(0, 0, imageData.width, imageData.height);
+};

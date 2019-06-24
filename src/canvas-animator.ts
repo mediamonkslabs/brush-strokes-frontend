@@ -1,4 +1,5 @@
 import { startFrameCounter } from './lib/frame';
+import { get2DContext } from './lib/canvas';
 
 export class CanvasAnimator {
   private currentFrame = 0;
@@ -11,12 +12,6 @@ export class CanvasAnimator {
   }
 
   public animate() {
-    const ctx = this.canvas.getContext('2d');
-
-    if (ctx === null) {
-      throw new Error('Could not get 2d context from canvas');
-    }
-
     const frameOffset = this.currentFrame;
 
     startFrameCounter((frame, cancel) => {
@@ -34,9 +29,13 @@ export class CanvasAnimator {
       }
 
       this.currentFrame = floored;
-
-      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      ctx.putImageData(this.frames[floored], 0, 0, 0, 0, this.canvas.width, this.canvas.height);
+      this.drawImage(this.frames[floored]);
     }, 60);
+  }
+
+  public drawImage(image: ImageData) {
+    const ctx = get2DContext(this.canvas);
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.putImageData(image, 0, 0, 0, 0, this.canvas.width, this.canvas.height);
   }
 }
