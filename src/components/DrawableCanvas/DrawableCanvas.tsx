@@ -100,7 +100,7 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({
         setPreviousMouse({ x, y });
       }
     },
-    [context, mouseDown, previousMouse],
+    [context, mouseDown, previousMouse, scaleX, scaleY],
   );
 
   useEffect(() => {
