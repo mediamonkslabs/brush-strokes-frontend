@@ -6,8 +6,8 @@ import DrawableCanvas from './components/DrawableCanvas';
 import { ScaleMode, useElementFit } from 'use-element-fit';
 
 enum AppState {
-  INITIAL_DRAW,
-  CONTINUE_DRAW,
+  INITIAL_DRAW = 'initial',
+  CONTINUE_DRAW = 'continue',
 }
 
 const CANVAS_WIDTH = 512;
