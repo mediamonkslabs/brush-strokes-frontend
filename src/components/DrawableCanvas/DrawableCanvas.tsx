@@ -16,9 +16,9 @@ const clear = (ctx: CanvasRenderingContext2D) => {
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 10 * devicePixelRatio;
+  ctx.lineWidth = 5 * devicePixelRatio;
   ctx.lineJoin = ctx.lineCap = 'round';
-  ctx.filter = 'blur(8px)';
+  ctx.filter = 'blur(5px)';
 };
 
 const drawBetweenPoints = (
