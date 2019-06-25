@@ -47,8 +47,8 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({
   const [previousMouse, setPreviousMouse] = useState<{ x: number; y: number }>({ x: -1, y: -1 });
   const [mouseDown, setMouseDown] = useState<boolean>(false);
   const folder = useDatGuiFolder('Drawable', true);
-  const brushSize = useDatGuiValue(folder, 10, 'brush size', 1, 100);
-  const blur = useDatGuiValue(folder, 8, 'blur', 1, 100);
+  const brushSize = useDatGuiValue(folder, 5, 'brush size', 1, 100);
+  const blur = useDatGuiValue(folder, 5, 'blur', 1, 100);
 
   const pointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     setPreviousMouse({
