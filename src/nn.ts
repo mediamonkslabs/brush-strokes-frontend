@@ -184,7 +184,7 @@ export class NN {
     const nextLatentVector = await this.getLatentVector(next);
 
     // createe an array of values between 0 and 1
-    const vals = tf.linspace(0, 1, 50).arraySync();
+    const vals = tf.linspace(0, 1, 20).arraySync();
 
     return await Promise.all(
       vals.map(async val => {
