@@ -1,5 +1,7 @@
-import React, { createRef, PointerEvent, useCallback, useEffect, useState } from 'react';
+import React, { createRef, useCallback, useEffect, useState } from 'react';
 import { applyBackground, get2DContext, scaleImage } from '../../lib/canvas';
+import { useDatGuiValue } from '../../lib/use-dat-gui-value';
+import { useDatGuiFolder } from '../../lib/use-dat-gui-folder';
 
 export interface Props {
   width: number;
@@ -16,9 +18,7 @@ const clear = (ctx: CanvasRenderingContext2D) => {
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 10 * devicePixelRatio;
   ctx.lineJoin = ctx.lineCap = 'round';
-  ctx.filter = 'blur(8px)';
 };
 
 const drawBetweenPoints = (
@@ -46,6 +46,9 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({
   const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
   const [previousMouse, setPreviousMouse] = useState<{ x: number; y: number }>({ x: -1, y: -1 });
   const [mouseDown, setMouseDown] = useState<boolean>(false);
+  const folder = useDatGuiFolder('Drawable', true);
+  const brushSize = useDatGuiValue(folder, 10, 'brush size', 1, 100);
+  const blur = useDatGuiValue(folder, 8, 'blur', 1, 100);
 
   const pointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     setPreviousMouse({
@@ -85,9 +88,11 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({
       if (context === null) {
         return;
       }
-      if (mouseDown) {
+      if (mouseDown && brushSize !== null) {
         const x = event.nativeEvent.offsetX * devicePixelRatio;
         const y = event.nativeEvent.offsetY * devicePixelRatio;
+        context.lineWidth = brushSize * devicePixelRatio;
+        context.filter = `blur(${blur}px)`;
 
         drawBetweenPoints(
           context,
@@ -100,7 +105,7 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({
         setPreviousMouse({ x, y });
       }
     },
-    [context, mouseDown, previousMouse, scaleX, scaleY],
+    [context, mouseDown, previousMouse, scaleX, scaleY, brushSize, blur],
   );
 
   useEffect(() => {
