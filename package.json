@@ -5,10 +5,12 @@
   "homepage": "https://mediamonkslabs.github.io/brush-strokes-frontend/",
   "dependencies": {
     "@tensorflow/tfjs": "^1.1.2",
+    "@types/dat-gui": "^0.6.3",
     "@types/jest": "^24.0.13",
     "@types/react": "^16.8.19",
     "comlink": "^4.0.1",
     "comlink-loader": "^1.1.0",
+    "dat-gui": "^0.5.0",
     "husky": "^2.4.0",
     "jest-canvas-mock": "^2.1.0",
     "lint-staged": "^8.2.0",
