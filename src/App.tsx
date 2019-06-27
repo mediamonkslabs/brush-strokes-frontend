@@ -4,6 +4,8 @@ import { NNWorker } from './workers/app.worker';
 import { CanvasAnimator } from './canvas-animator';
 import DrawableCanvas from './components/DrawableCanvas';
 import { ScaleMode, useElementFit } from 'use-element-fit';
+import { useDatGuiValue } from './lib/use-dat-gui-value';
+import { useDatGuiFolder } from './lib/use-dat-gui-folder';
 
 enum AppState {
   INITIAL_DRAW = 'initial',
@@ -20,6 +22,11 @@ const App = () => {
   const [appWorker, setAppWorker] = useState<NNWorker | null>(null);
   const [canvasAnimator, setDrawableCanvasAnimator] = useState<CanvasAnimator | null>(null);
   const [nnDataLoading, setNNDataLoading] = useState(false);
+
+  const folder = useDatGuiFolder('Neural net', true);
+
+  const additionalFrames = useDatGuiValue(folder, 10, 'Extra frames', 1, 100);
+  const additionalFramesStep = useDatGuiValue(folder, 10, 'Extra frames step', 1, 100);
 
   const {
     ref: canvasContainerRef,
@@ -60,15 +67,25 @@ const App = () => {
           setDrawnFrames([next]);
           setAppState(AppState.CONTINUE_DRAW);
 
-          const result = await appWorker.getFrame(next);
-          canvasAnimator.drawImage(result);
+          const nextFrames = await appWorker.getFrame(next, additionalFrames, additionalFramesStep);
+
+          setDrawnFrames([...drawnFrames, next]);
+
+          canvasAnimator.addFrames(nextFrames);
+          canvasAnimator.animate();
+
           return;
         }
 
         if (appState === AppState.CONTINUE_DRAW) {
           // generate animation
           const previous = drawnFrames[drawnFrames.length - 1];
-          const nextFrames = await appWorker.getNextFrame(previous, next);
+          const nextFrames = await appWorker.getNextFrame(
+            previous,
+            next,
+            additionalFrames,
+            additionalFramesStep,
+          );
 
           setDrawnFrames([...drawnFrames, next]);
 
