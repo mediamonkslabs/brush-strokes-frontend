@@ -8800,6 +8800,11 @@ range-parser@^1.0.3, range-parser@~1.2.0:
   resolved "https://registry.yarnpkg.com/range-parser/-/range-parser-1.2.0.tgz#f49be6b487894ddc40dcc94a322f611092e00d5e"
   integrity sha1-9JvmtIeJTdxA3MlKMi9hEJLgDV4=
 
+range@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/range/-/range-0.0.3.tgz#b5b8eb2463a516b624a563bd32b18fe89e70151b"
+  integrity sha1-tbjrJGOlFrYkpWO9MrGP6J5wFRs=
+
 raw-body@2.3.3:
   version "2.3.3"
   resolved "https://registry.yarnpkg.com/raw-body/-/raw-body-2.3.3.tgz#1b324ece6b5706e153855bc1148c65bb7f6ea0c3"

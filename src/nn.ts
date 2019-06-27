@@ -1,5 +1,6 @@
 import { loadModels } from './lib/nn';
 import * as tf from '@tensorflow/tfjs';
+import { range } from 'range';
 
 const eucDistance = (a: number[], b: number[]): number =>
   a
@@ -153,7 +154,11 @@ export class NN {
     return new Error('AppWorker not initialized: call init() first.');
   }
 
-  public async getFrame(imageData: ImageData) {
+  public async getFrame(
+    imageData: ImageData,
+    additionalFrames: number,
+    additionalFramesStep: number,
+  ): Promise<Array<ImageData>> {
     if (
       this.strokeEncoder === undefined ||
       this.allStrokes === undefined ||
@@ -168,10 +173,37 @@ export class NN {
 
     const data = await this.generateImageFromVector(newVector, imageData.width, imageData.height);
 
-    return new ImageData(await tf.browser.toPixels(data), imageData.width, imageData.height);
+    return [
+      new ImageData(await tf.browser.toPixels(data), imageData.width, imageData.height),
+      ...(await Promise.all(
+        range(0, additionalFrames * additionalFramesStep, additionalFramesStep).map(async n => {
+          if (
+            this.strokeEncoder === undefined ||
+            this.allStrokes === undefined ||
+            this.poseDecoder === undefined ||
+            this.allPoses === undefined
+          ) {
+            throw this.notLoadedError();
+          }
+
+          const data = await this.generateImageFromVector(
+            this.allPoses[latentVector + n][0],
+            imageData.width,
+            imageData.height,
+          );
+
+          return new ImageData(await tf.browser.toPixels(data), imageData.width, imageData.height);
+        }),
+      )),
+    ];
   }
 
-  public async getNextFrame(previous: ImageData, next: ImageData): Promise<Array<ImageData>> {
+  public async getNextFrame(
+    previous: ImageData,
+    next: ImageData,
+    additionalFrames: number,
+    additionalFramesStep: number,
+  ): Promise<Array<ImageData>> {
     if (
       this.strokeEncoder === undefined ||
       this.allStrokes === undefined ||
@@ -183,11 +215,11 @@ export class NN {
     const previousLatentVector = await this.getLatentVector(previous);
     const nextLatentVector = await this.getLatentVector(next);
 
-    // createe an array of values between 0 and 1
+    // create an array of values between 0 and 1
     const vals = tf.linspace(0, 1, 20).arraySync();
 
-    return await Promise.all(
-      vals.map(async val => {
+    return await Promise.all([
+      ...vals.map(async val => {
         if (
           this.strokeEncoder === undefined ||
           this.allStrokes === undefined ||
@@ -207,7 +239,25 @@ export class NN {
 
         return new ImageData(await tf.browser.toPixels(data), previous.width, previous.height);
       }),
-    );
+      ...range(0, additionalFrames * additionalFramesStep, additionalFramesStep).map(async n => {
+        if (
+          this.strokeEncoder === undefined ||
+          this.allStrokes === undefined ||
+          this.poseDecoder === undefined ||
+          this.allPoses === undefined
+        ) {
+          throw this.notLoadedError();
+        }
+
+        const data = await this.generateImageFromVector(
+          this.allPoses[nextLatentVector + n][0],
+          previous.width,
+          previous.height,
+        );
+
+        return new ImageData(await tf.browser.toPixels(data), previous.width, previous.height);
+      }),
+    ]);
   }
 
   public async init() {
