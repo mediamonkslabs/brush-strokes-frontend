@@ -94,7 +94,15 @@ const App = () => {
         }
       }
     },
-    [appWorker, outCanvasRef, appState, drawnFrames, canvasAnimator],
+    [
+      appWorker,
+      outCanvasRef,
+      appState,
+      drawnFrames,
+      canvasAnimator,
+      additionalFrames,
+      additionalFramesStep,
+    ],
   );
 
   return (
