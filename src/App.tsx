@@ -17,7 +17,6 @@ const CANVAS_HEIGHT = 256;
 
 const App = () => {
   const [appState, setAppState] = useState(AppState.INITIAL_DRAW);
-  const [drawnFrames, setDrawnFrames] = useState<Array<ImageData>>([]);
   const outCanvasRef = createRef<HTMLCanvasElement>();
   const [appWorker, setAppWorker] = useState<NNWorker | null>(null);
   const [canvasAnimator, setDrawableCanvasAnimator] = useState<CanvasAnimator | null>(null);
@@ -25,6 +24,7 @@ const App = () => {
 
   const folder = useDatGuiFolder('Neural net', true);
 
+  const frames = useDatGuiValue(folder, 20, 'Frames', 1, 100);
   const additionalFrames = useDatGuiValue(folder, 10, 'Extra frames', 1, 100);
   const additionalFramesStep = useDatGuiValue(folder, 10, 'Extra frames step', 1, 100);
 
@@ -64,12 +64,14 @@ const App = () => {
         }
 
         if (appState === AppState.INITIAL_DRAW) {
-          setDrawnFrames([next]);
           setAppState(AppState.CONTINUE_DRAW);
 
-          const nextFrames = await appWorker.getFrame(next, additionalFrames, additionalFramesStep);
-
-          setDrawnFrames([...drawnFrames, next]);
+          const nextFrames = await appWorker.getNextFrames(
+            next,
+            frames,
+            additionalFrames,
+            additionalFramesStep,
+          );
 
           canvasAnimator.addFrames(nextFrames);
           canvasAnimator.animate();
@@ -79,15 +81,12 @@ const App = () => {
 
         if (appState === AppState.CONTINUE_DRAW) {
           // generate animation
-          const previous = drawnFrames[drawnFrames.length - 1];
-          const nextFrames = await appWorker.getNextFrame(
-            previous,
+          const nextFrames = await appWorker.getNextFrames(
             next,
+            frames,
             additionalFrames,
             additionalFramesStep,
           );
-
-          setDrawnFrames([...drawnFrames, next]);
 
           canvasAnimator.addFrames(nextFrames);
           canvasAnimator.animate();
@@ -98,10 +97,10 @@ const App = () => {
       appWorker,
       outCanvasRef,
       appState,
-      drawnFrames,
       canvasAnimator,
       additionalFrames,
       additionalFramesStep,
+      frames,
     ],
   );
 

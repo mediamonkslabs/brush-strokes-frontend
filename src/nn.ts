@@ -2,6 +2,9 @@ import { loadModels } from './lib/nn';
 import * as tf from '@tensorflow/tfjs';
 import { range } from 'range';
 
+const CANVAS_WIDTH = 512;
+const CANVAS_HEIGHT = 256;
+
 const eucDistance = (a: number[], b: number[]): number =>
   a
     .map((x, i) => Math.abs(x - b[i]) ** 2) // square the difference
@@ -58,6 +61,8 @@ export class NN {
   private allPoses: Array<Array<Array<number>>> | undefined;
   private allStrokes: Array<Array<number>> | undefined;
   private poseEncoder: tf.LayersModel | undefined;
+
+  private previousStrokeVectors: Array<number> = [];
 
   private predictStroke(imgData: ImageData): tf.Tensor<tf.Rank> {
     return tf.tidy(() => {
@@ -154,92 +159,9 @@ export class NN {
     return new Error('AppWorker not initialized: call init() first.');
   }
 
-  public async getFrame(
-    imageData: ImageData,
-    additionalFrames: number,
-    additionalFramesStep: number,
-  ): Promise<Array<ImageData>> {
-    if (
-      this.strokeEncoder === undefined ||
-      this.allStrokes === undefined ||
-      this.poseDecoder === undefined ||
-      this.allPoses === undefined
-    ) {
-      throw this.notLoadedError();
-    }
-
-    const latentVector = await this.getLatentVector(imageData);
-    const newVector = this.allPoses[latentVector][0];
-
-    const data = await this.generateImageFromVector(newVector, imageData.width, imageData.height);
-
-    return [
-      new ImageData(await tf.browser.toPixels(data), imageData.width, imageData.height),
-      ...(await Promise.all(
-        range(0, additionalFrames * additionalFramesStep, additionalFramesStep).map(async n => {
-          if (
-            this.strokeEncoder === undefined ||
-            this.allStrokes === undefined ||
-            this.poseDecoder === undefined ||
-            this.allPoses === undefined
-          ) {
-            throw this.notLoadedError();
-          }
-
-          const data = await this.generateImageFromVector(
-            this.allPoses[latentVector + n][0],
-            imageData.width,
-            imageData.height,
-          );
-
-          return new ImageData(await tf.browser.toPixels(data), imageData.width, imageData.height);
-        }),
-      )),
-    ];
-  }
-
-  public async getNextFrame(
-    previous: ImageData,
-    next: ImageData,
-    additionalFrames: number,
-    additionalFramesStep: number,
-  ): Promise<Array<ImageData>> {
-    if (
-      this.strokeEncoder === undefined ||
-      this.allStrokes === undefined ||
-      this.poseDecoder === undefined ||
-      this.allPoses === undefined
-    ) {
-      throw this.notLoadedError();
-    }
-    const previousLatentVector = await this.getLatentVector(previous);
-    const nextLatentVector = await this.getLatentVector(next);
-
-    // create an array of values between 0 and 1
-    const vals = tf.linspace(0, 1, 20).arraySync();
-
-    return await Promise.all([
-      ...vals.map(async val => {
-        if (
-          this.strokeEncoder === undefined ||
-          this.allStrokes === undefined ||
-          this.poseDecoder === undefined ||
-          this.allPoses === undefined
-        ) {
-          throw this.notLoadedError();
-        }
-
-        const newVector = slerp(
-          this.allPoses[previousLatentVector][0],
-          this.allPoses[nextLatentVector][0],
-          val,
-        );
-
-        const data = await this.generateImageFromVector(newVector, previous.width, previous.height);
-
-        return new ImageData(await tf.browser.toPixels(data), previous.width, previous.height);
-      }),
-      ...range(0, additionalFrames * additionalFramesStep, additionalFramesStep).map(async n => {
+  private async getAdditionalFrames(latentVector: number, frameCount: number, frameStep: number) {
+    return await Promise.all(
+      range(0, frameCount * frameStep, frameStep).map(async n => {
         if (
           this.strokeEncoder === undefined ||
           this.allStrokes === undefined ||
@@ -250,14 +172,72 @@ export class NN {
         }
 
         const data = await this.generateImageFromVector(
-          this.allPoses[nextLatentVector + n][0],
-          previous.width,
-          previous.height,
+          this.allPoses[latentVector + n][0],
+          CANVAS_WIDTH,
+          CANVAS_HEIGHT,
         );
 
-        return new ImageData(await tf.browser.toPixels(data), previous.width, previous.height);
+        return new ImageData(await tf.browser.toPixels(data), CANVAS_WIDTH, CANVAS_HEIGHT);
       }),
-    ]);
+    );
+  }
+
+  public async getNextFrames(
+    next: ImageData,
+    frames: number,
+    additionalFrames: number,
+    additionalFramesStep: number,
+  ): Promise<Array<ImageData>> {
+    if (
+      this.strokeEncoder === undefined ||
+      this.allStrokes === undefined ||
+      this.poseDecoder === undefined ||
+      this.allPoses === undefined
+    ) {
+      throw this.notLoadedError();
+    }
+    const previousLatentVector = this.previousStrokeVectors[this.previousStrokeVectors.length - 1];
+    const nextLatentVector = await this.getLatentVector(next);
+
+    this.previousStrokeVectors.push(
+      nextLatentVector +
+        (range(0, additionalFrames * additionalFramesStep, additionalFramesStep).pop() as number),
+    );
+
+    // create an array of values between 0 and 1
+    const vals = tf.linspace(0, 1, frames).arraySync();
+
+    return [
+      ...(previousLatentVector === undefined
+        ? []
+        : await Promise.all(
+            vals.map(async val => {
+              if (
+                this.strokeEncoder === undefined ||
+                this.allStrokes === undefined ||
+                this.poseDecoder === undefined ||
+                this.allPoses === undefined
+              ) {
+                throw this.notLoadedError();
+              }
+
+              const newVector = slerp(
+                this.allPoses[previousLatentVector][0],
+                this.allPoses[nextLatentVector][0],
+                val,
+              );
+
+              const data = await this.generateImageFromVector(
+                newVector,
+                CANVAS_WIDTH,
+                CANVAS_HEIGHT,
+              );
+
+              return new ImageData(await tf.browser.toPixels(data), CANVAS_WIDTH, CANVAS_HEIGHT);
+            }),
+          )),
+      ...(await this.getAdditionalFrames(nextLatentVector, additionalFrames, additionalFramesStep)),
+    ];
   }
 
   public async init() {
