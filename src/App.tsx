@@ -14,7 +14,6 @@ enum AppState {
 
 const CANVAS_WIDTH = 512;
 const CANVAS_HEIGHT = 256;
-const MAX_STROKE_LENGTH = 200;
 
 const App = () => {
   const [appState, setAppState] = useState(AppState.INITIAL_DRAW);

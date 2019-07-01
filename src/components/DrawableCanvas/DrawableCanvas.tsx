@@ -118,7 +118,17 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({
         setPreviousMouse({ x, y });
       }
     },
-    [context, mouseDown, previousMouse, scaleX, scaleY, brushSize, blur],
+    [
+      context,
+      mouseDown,
+      previousMouse,
+      scaleX,
+      scaleY,
+      brushSize,
+      blur,
+      strokeLength,
+      maxStrokeLength,
+    ],
   );
 
   useEffect(() => {
