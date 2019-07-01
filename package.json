@@ -10,6 +10,7 @@
     "@types/react": "^16.8.19",
     "comlink": "^4.0.1",
     "comlink-loader": "^1.1.0",
+    "cross-env": "^5.2.0",
     "dat-gui": "^0.5.0",
     "husky": "^2.4.0",
     "jest-canvas-mock": "^2.1.0",
@@ -35,7 +36,7 @@
   },
   "scripts": {
     "start": "react-app-rewired start",
-    "build": "react-app-rewired build",
+    "build": "cross-env REACT_APP_HIDE_DAT_GUI=1 react-app-rewired build",
     "test": "react-app-rewired test",
     "eject": "react-app-rewired eject",
     "lint": "npm-run-all lint:*",
@@ -75,5 +76,6 @@
     "setupFiles": [
       "jest-canvas-mock"
     ]
-  }
+  },
+  "devDependencies": {}
 }

@@ -46,11 +46,14 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({
   const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
   const [previousMouse, setPreviousMouse] = useState<{ x: number; y: number }>({ x: -1, y: -1 });
   const [mouseDown, setMouseDown] = useState<boolean>(false);
+  const [strokeLength, setStrokeLength] = useState<number>(0);
   const folder = useDatGuiFolder('Drawable', false);
   const brushSize = useDatGuiValue(folder, 5, 'brush size', 1, 100);
+  const maxStrokeLength = useDatGuiValue(folder, 250, 'max stroke length', 1, 1000);
   const blur = useDatGuiValue(folder, 5, 'blur', 1, 100);
 
   const pointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    setStrokeLength(0);
     setPreviousMouse({
       x: event.nativeEvent.offsetX * devicePixelRatio,
       y: event.nativeEvent.offsetY * devicePixelRatio,
@@ -93,6 +96,16 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({
         const y = event.nativeEvent.offsetY * devicePixelRatio;
         context.lineWidth = brushSize * devicePixelRatio;
         context.filter = `blur(${blur}px)`;
+        setStrokeLength(0);
+
+        const distance =
+          strokeLength +
+          Math.hypot(previousMouse.x / scaleX - x / scaleX, previousMouse.y / scaleY - y / scaleY);
+        setStrokeLength(distance);
+
+        if (distance > maxStrokeLength) {
+          return;
+        }
 
         drawBetweenPoints(
           context,
@@ -105,7 +118,17 @@ const DrawableCanvas: React.FunctionComponent<Props> = ({
         setPreviousMouse({ x, y });
       }
     },
-    [context, mouseDown, previousMouse, scaleX, scaleY, brushSize, blur],
+    [
+      context,
+      mouseDown,
+      previousMouse,
+      scaleX,
+      scaleY,
+      brushSize,
+      blur,
+      strokeLength,
+      maxStrokeLength,
+    ],
   );
 
   useEffect(() => {
