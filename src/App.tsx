@@ -22,11 +22,11 @@ const App = () => {
   const [canvasAnimator, setDrawableCanvasAnimator] = useState<CanvasAnimator | null>(null);
   const [nnDataLoading, setNNDataLoading] = useState(false);
 
-  const folder = useDatGuiFolder('Neural net', true);
+  const folder = useDatGuiFolder('Neural net', false);
 
-  const frames = useDatGuiValue(folder, 20, 'Frames', 1, 100);
-  const additionalFrames = useDatGuiValue(folder, 10, 'Extra frames', 1, 100);
-  const additionalFramesStep = useDatGuiValue(folder, 10, 'Extra frames step', 1, 100);
+  const frames = useDatGuiValue(folder, 10, 'Frames', 1, 100);
+  const additionalFrames = useDatGuiValue(folder, 40, 'Extra frames', 1, 100);
+  const additionalFramesStep = useDatGuiValue(folder, 1, 'Extra frames step', 1, 100);
 
   const {
     ref: canvasContainerRef,
