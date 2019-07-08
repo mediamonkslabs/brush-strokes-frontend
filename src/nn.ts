@@ -195,11 +195,19 @@ export class NN {
     const previousLatentVector = this.previousStrokeVectors[this.previousStrokeVectors.length - 1];
     const nextLatentVector = await this.getLatentVector(next);
 
+    if (previousLatentVector === undefined) {
+      return await this.getAdditionalFrames(
+        nextLatentVector,
+        additionalFrames,
+        additionalFramesStep,
+      );
+    }
+
     const intermediateVals = tf.linspace(0, 1, 3).arraySync();
     const intermediateVector = slerp(
-      [previousLatentVector],
-      [nextLatentVector],
-      intermediateVals[1],
+      this.allPoses[previousLatentVector][0],
+      this.allPoses[nextLatentVector][0],
+      0.5,
     );
 
     const previousPose = previousLatentVector ? this.allPoses[previousLatentVector][0] : [];
