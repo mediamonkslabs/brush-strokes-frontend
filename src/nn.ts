@@ -91,23 +91,18 @@ export class NN {
     });
   };
 
-  private getClosestVector(prediction: number[][]): number {
-    if (this.allStrokes === undefined) {
-      throw this.notLoadedError();
-    }
-
+  private getClosestVector(
+    prediction: Array<Array<number>>,
+    strokes: Array<Array<number>>,
+  ): number {
     let distWinner = 100000;
     let winner: number = 0;
 
-    this.allStrokes.forEach(vector => {
-      if (this.allStrokes === undefined) {
-        throw this.notLoadedError();
-      }
-
+    strokes.forEach(vector => {
       const dist = eucDistance(prediction[0], vector);
       if (dist < distWinner) {
         distWinner = dist;
-        winner = this.allStrokes.indexOf(vector);
+        winner = strokes.indexOf(vector);
       }
     });
 
@@ -142,7 +137,7 @@ export class NN {
     }
 
     const prediction = this.predictStroke(imageData).arraySync() as number[][];
-    return this.getClosestVector(prediction);
+    return this.getClosestVector(prediction, this.allStrokes);
   }
 
   private async generateImageFromVector(
@@ -192,12 +187,30 @@ export class NN {
       this.strokeEncoder === undefined ||
       this.allStrokes === undefined ||
       this.poseDecoder === undefined ||
-      this.allPoses === undefined
+      this.allPoses === undefined ||
+      this.allStrokes === undefined
     ) {
       throw this.notLoadedError();
     }
     const previousLatentVector = this.previousStrokeVectors[this.previousStrokeVectors.length - 1];
     const nextLatentVector = await this.getLatentVector(next);
+
+    if (previousLatentVector === undefined) {
+      return await this.getAdditionalFrames(
+        nextLatentVector,
+        additionalFrames,
+        additionalFramesStep,
+      );
+    }
+
+    const intermediateVector = slerp(
+      this.allPoses[previousLatentVector][0],
+      this.allPoses[nextLatentVector][0],
+      0.5,
+    );
+
+    const previousPose = previousLatentVector ? this.allPoses[previousLatentVector][0] : [];
+    const nextPose = this.allPoses[nextLatentVector][0];
 
     this.previousStrokeVectors.push(
       nextLatentVector +
@@ -205,37 +218,46 @@ export class NN {
     );
 
     // create an array of values between 0 and 1
-    const vals = tf.linspace(0, 1, frames).arraySync();
+    const vals = tf.linspace(0, 1, frames / 2).arraySync();
 
     return [
+      // lerp between previous pose and the found intermediate vector
       ...(previousLatentVector === undefined
         ? []
         : await Promise.all(
-            vals.map(async val => {
-              if (
-                this.strokeEncoder === undefined ||
-                this.allStrokes === undefined ||
-                this.poseDecoder === undefined ||
-                this.allPoses === undefined
-              ) {
-                throw this.notLoadedError();
-              }
-
-              const newVector = slerp(
-                this.allPoses[previousLatentVector][0],
-                this.allPoses[nextLatentVector][0],
-                val,
-              );
-
-              const data = await this.generateImageFromVector(
-                newVector,
-                CANVAS_WIDTH,
-                CANVAS_HEIGHT,
-              );
-
-              return new ImageData(await tf.browser.toPixels(data), CANVAS_WIDTH, CANVAS_HEIGHT);
-            }),
+            vals.map(
+              async value =>
+                new ImageData(
+                  await tf.browser.toPixels(
+                    await this.generateImageFromVector(
+                      slerp(previousPose, intermediateVector, value),
+                      CANVAS_WIDTH,
+                      CANVAS_HEIGHT,
+                    ),
+                  ),
+                  CANVAS_WIDTH,
+                  CANVAS_HEIGHT,
+                ),
+            ),
           )),
+
+      // lerp between the found intermediate vector and the next pose
+      ...(await Promise.all(
+        vals.map(
+          async value =>
+            new ImageData(
+              await tf.browser.toPixels(
+                await this.generateImageFromVector(
+                  slerp(intermediateVector, nextPose, value),
+                  CANVAS_WIDTH,
+                  CANVAS_HEIGHT,
+                ),
+              ),
+              CANVAS_WIDTH,
+              CANVAS_HEIGHT,
+            ),
+        ),
+      )),
       ...(await this.getAdditionalFrames(nextLatentVector, additionalFrames, additionalFramesStep)),
     ];
   }
