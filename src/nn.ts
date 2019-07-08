@@ -222,24 +222,22 @@ export class NN {
 
     return [
       // lerp between previous pose and the found intermediate vector
-      ...(previousLatentVector === undefined
-        ? []
-        : await Promise.all(
-            vals.map(
-              async value =>
-                new ImageData(
-                  await tf.browser.toPixels(
-                    await this.generateImageFromVector(
-                      slerp(previousPose, intermediateVector, value),
-                      CANVAS_WIDTH,
-                      CANVAS_HEIGHT,
-                    ),
-                  ),
+      ...(await Promise.all(
+        vals.map(
+          async value =>
+            new ImageData(
+              await tf.browser.toPixels(
+                await this.generateImageFromVector(
+                  slerp(previousPose, intermediateVector, value),
                   CANVAS_WIDTH,
                   CANVAS_HEIGHT,
                 ),
+              ),
+              CANVAS_WIDTH,
+              CANVAS_HEIGHT,
             ),
-          )),
+        ),
+      )),
 
       // lerp between the found intermediate vector and the next pose
       ...(await Promise.all(
