@@ -203,7 +203,6 @@ export class NN {
       );
     }
 
-    const intermediateVals = tf.linspace(0, 1, 3).arraySync();
     const intermediateVector = slerp(
       this.allPoses[previousLatentVector][0],
       this.allPoses[nextLatentVector][0],
