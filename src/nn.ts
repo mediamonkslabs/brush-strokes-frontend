@@ -109,6 +109,30 @@ export class NN {
     return winner;
   }
 
+  // Stu, not sure if you want to keep this a separate function or extend getClosestVector
+  private getClosestPoseVector(prediction: number[]): number {
+    if (this.allPoses === undefined) {
+      throw this.notLoadedError();
+    }
+
+    let distWinner = 100000;
+    let winner: number = 0;
+
+    this.allPoses.forEach(vector => {
+      if (this.allPoses === undefined) {
+        throw this.notLoadedError();
+      }
+
+      const dist = eucDistance(prediction, vector[0]);
+      if (dist < distWinner) {
+        distWinner = dist;
+        winner = this.allPoses.indexOf(vector);
+      }
+    });
+
+    return winner;
+  }
+
   private postprocess(tensor: tf.Tensor<tf.Rank.R3>, canvasWidth: number, canvasHeight: number) {
     return tf.tidy(() => {
       // resize to canvas size
@@ -209,6 +233,9 @@ export class NN {
       0.5,
     );
 
+    const intermediateVectorIndex = this.getClosestPoseVector(intermediateVector);
+    const closestIntermediateVector = this.allPoses[intermediateVectorIndex][0];
+
     const previousPose = previousLatentVector ? this.allPoses[previousLatentVector][0] : [];
     const nextPose = this.allPoses[nextLatentVector][0];
 
@@ -230,7 +257,7 @@ export class NN {
                 new ImageData(
                   await tf.browser.toPixels(
                     await this.generateImageFromVector(
-                      slerp(previousPose, intermediateVector, value),
+                      slerp(previousPose, closestIntermediateVector, value),
                       CANVAS_WIDTH,
                       CANVAS_HEIGHT,
                     ),
@@ -248,7 +275,7 @@ export class NN {
             new ImageData(
               await tf.browser.toPixels(
                 await this.generateImageFromVector(
-                  slerp(intermediateVector, nextPose, value),
+                  slerp(closestIntermediateVector, nextPose, value),
                   CANVAS_WIDTH,
                   CANVAS_HEIGHT,
                 ),
