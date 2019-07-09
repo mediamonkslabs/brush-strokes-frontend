@@ -220,6 +220,10 @@ export class NN {
     const nextLatentVector = await this.getLatentVector(next);
 
     if (previousLatentVector === undefined) {
+      this.previousStrokeVectors.push(
+        nextLatentVector +
+          (range(0, additionalFrames * additionalFramesStep, additionalFramesStep).pop() as number),
+      );
       return await this.getAdditionalFrames(
         nextLatentVector,
         additionalFrames,
