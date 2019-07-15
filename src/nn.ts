@@ -168,17 +168,25 @@ export class NN {
     newVector: Array<number>,
     imageWidth: number,
     imageHeight: number,
-  ) {
+  ): Promise<ImageData> {
     const slerpedPredictedPose = this.predictPose(newVector);
 
-    return this.postprocess(slerpedPredictedPose, imageWidth, imageHeight);
+    return new ImageData(
+      await tf.browser.toPixels(this.postprocess(slerpedPredictedPose, imageWidth, imageHeight)),
+      imageWidth,
+      imageHeight,
+    );
   }
 
   private notLoadedError() {
     return new Error('AppWorker not initialized: call init() first.');
   }
 
-  private async getAdditionalFrames(latentVector: number, frameCount: number, frameStep: number) {
+  private async getAdditionalFrames(
+    latentVector: number,
+    frameCount: number,
+    frameStep: number,
+  ): Promise<Array<ImageData>> {
     return await Promise.all(
       range(0, frameCount * frameStep, frameStep).map(async n => {
         if (
@@ -190,13 +198,11 @@ export class NN {
           throw this.notLoadedError();
         }
 
-        const data = await this.generateImageFromVector(
+        return await this.generateImageFromVector(
           this.allPoses[latentVector + n][0],
           CANVAS_WIDTH,
           CANVAS_HEIGHT,
         );
-
-        return new ImageData(await tf.browser.toPixels(data), CANVAS_WIDTH, CANVAS_HEIGHT);
       }),
     );
   }
@@ -253,37 +259,23 @@ export class NN {
 
     return [
       // lerp between previous pose and the found intermediate vector
-      ...(previousLatentVector === undefined
-        ? []
-        : await Promise.all(
-            vals.map(
-              async value =>
-                new ImageData(
-                  await tf.browser.toPixels(
-                    await this.generateImageFromVector(
-                      slerp(previousPose, closestIntermediateVector, value),
-                      CANVAS_WIDTH,
-                      CANVAS_HEIGHT,
-                    ),
-                  ),
-                  CANVAS_WIDTH,
-                  CANVAS_HEIGHT,
-                ),
+      ...(await Promise.all(
+        vals.map(
+          async value =>
+            await this.generateImageFromVector(
+              slerp(previousPose, closestIntermediateVector, value),
+              CANVAS_WIDTH,
+              CANVAS_HEIGHT,
             ),
-          )),
+        ),
+      )),
 
       // lerp between the found intermediate vector and the next pose
       ...(await Promise.all(
         vals.map(
           async value =>
-            new ImageData(
-              await tf.browser.toPixels(
-                await this.generateImageFromVector(
-                  slerp(closestIntermediateVector, nextPose, value),
-                  CANVAS_WIDTH,
-                  CANVAS_HEIGHT,
-                ),
-              ),
+            await this.generateImageFromVector(
+              slerp(closestIntermediateVector, nextPose, value),
               CANVAS_WIDTH,
               CANVAS_HEIGHT,
             ),
