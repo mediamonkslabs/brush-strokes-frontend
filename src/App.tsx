@@ -6,6 +6,7 @@ import DrawableCanvas from './components/DrawableCanvas';
 import { ScaleMode, useElementFit } from 'use-element-fit';
 import { useDatGuiValue } from './lib/use-dat-gui-value';
 import { useDatGuiFolder } from './lib/use-dat-gui-folder';
+import WatercolorEffect from './watercolor-effect';
 
 enum AppState {
   INITIAL_DRAW = 'initial',
@@ -28,6 +29,8 @@ const App = () => {
   const additionalFrames = useDatGuiValue(folder, 40, 'Extra frames', 1, 100);
   const additionalFramesStep = useDatGuiValue(folder, 1, 'Extra frames step', 1, 100);
 
+  const [waterColorEffect, setWaterColorEffect] = useState<WatercolorEffect | null>(null);
+
   const {
     ref: canvasContainerRef,
     width: canvasWidth,
@@ -39,6 +42,10 @@ const App = () => {
   useEffect(() => {
     if (outCanvasRef.current !== null && canvasAnimator === null) {
       setDrawableCanvasAnimator(new CanvasAnimator(outCanvasRef.current));
+    }
+
+    if (!waterColorEffect) {
+      setWaterColorEffect(new WatercolorEffect(canvasContainerRef.current, outCanvasRef.current));
     }
   }, [canvasAnimator, outCanvasRef]);
 

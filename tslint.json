@@ -4,7 +4,8 @@
   "rulesDirectory": ["tslint-plugin-prettier"],
   "linterOptions": {
     "exclude": [
-      "./client/vendor/**/*.ts"
+      "./client/vendor/**/*.ts",
+      "./**/*.ts"
     ]
   },
   "rules": {
