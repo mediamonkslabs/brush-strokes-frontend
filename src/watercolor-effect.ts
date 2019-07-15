@@ -13,7 +13,7 @@ export default class WatercolorEffect {
 
   constructor(canvasWrapper: HTMLElement | null, canvasElement: HTMLCanvasElement | null) {
     this.imageEffectRenderer = ImageEffectRenderer.createTemporary(
-      <HTMLElement>canvasWrapper,
+      canvasWrapper as HTMLElement,
       blitShader,
       false,
     );
@@ -35,7 +35,9 @@ export default class WatercolorEffect {
 
     const canvasses = document.querySelectorAll('canvas');
     for (let i = 0; i < 2; i++) {
-      const context = <CanvasRenderingContext2D>(<HTMLCanvasElement>canvasses[i]).getContext('2d');
+      const context = (canvasses[i] as HTMLCanvasElement).getContext(
+        '2d',
+      ) as CanvasRenderingContext2D;
       context.fillStyle = 'white';
       context.fillRect(0, 0, 512, 512);
     }
