@@ -47,7 +47,7 @@ const App = () => {
     if (!waterColorEffect) {
       setWaterColorEffect(new WatercolorEffect(canvasContainerRef.current, outCanvasRef.current));
     }
-  }, [canvasAnimator, outCanvasRef]);
+  }, [canvasAnimator, outCanvasRef, canvasContainerRef, waterColorEffect]);
 
   useEffect(() => {
     (async () => {
