@@ -1,8 +1,8 @@
 import ImageEffectRenderer, { ImageEffectRendererBuffer } from './lib/ImageEffectRender';
 
-import blitShader from './shaders/blit.js';
-import dynamicsShader from './shaders/dynamics.js';
-import inputShader from './shaders/input.js';
+import blitShader from './shaders/blit.glsl';
+import dynamicsShader from './shaders/dynamics.glsl';
+import inputShader from './shaders/input.glsl';
 
 import imgNoise from './images/shadertoyNoise.png';
 import imgStructure from './images/structure.jpg';
