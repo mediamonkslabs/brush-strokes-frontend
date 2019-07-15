@@ -58,7 +58,7 @@ function slerp(a: Array<number>, b: Array<number>, t: number): Array<number> {
 export class NN {
   private poseDecoder: tf.LayersModel | undefined;
   private strokeEncoder: tf.LayersModel | undefined;
-  private allPoses: Array<Array<Array<number>>> | undefined;
+  private allPoses: Array<Array<number>> | undefined;
   private allStrokes: Array<Array<number>> | undefined;
   private poseEncoder: tf.LayersModel | undefined;
 
@@ -123,7 +123,7 @@ export class NN {
         throw this.notLoadedError();
       }
 
-      const dist = eucDistance(prediction, vector[0]);
+      const dist = eucDistance(prediction, vector);
       if (dist < distWinner) {
         distWinner = dist;
         winner = this.allPoses.indexOf(vector);
@@ -147,7 +147,7 @@ export class NN {
         throw this.notLoadedError();
       }
       let tensor = tf.tensor(closest);
-      tensor = tensor.reshape([1, 20]);
+      tensor = tensor.reshape([1, 22]);
       // get the prediction
       const posePred = this.poseDecoder.predict(tensor);
 
@@ -197,9 +197,8 @@ export class NN {
         ) {
           throw this.notLoadedError();
         }
-
         return await this.generateImageFromVector(
-          this.allPoses[latentVector + n][0],
+          this.allPoses[latentVector + n],
           CANVAS_WIDTH,
           CANVAS_HEIGHT,
         );
@@ -238,16 +237,16 @@ export class NN {
     }
 
     const intermediateVector = slerp(
-      this.allPoses[previousLatentVector][0],
-      this.allPoses[nextLatentVector][0],
+      this.allPoses[previousLatentVector],
+      this.allPoses[nextLatentVector],
       0.5,
     );
 
     const intermediateVectorIndex = this.getClosestPoseVector(intermediateVector);
-    const closestIntermediateVector = this.allPoses[intermediateVectorIndex][0];
+    const closestIntermediateVector = this.allPoses[intermediateVectorIndex];
 
-    const previousPose = previousLatentVector ? this.allPoses[previousLatentVector][0] : [];
-    const nextPose = this.allPoses[nextLatentVector][0];
+    const previousPose = previousLatentVector ? this.allPoses[previousLatentVector] : [];
+    const nextPose = this.allPoses[nextLatentVector];
 
     this.previousStrokeVectors.push(
       nextLatentVector +

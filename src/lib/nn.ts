@@ -4,7 +4,7 @@ import { ZLayer } from './ZLayer';
 export const loadModels: () => Promise<{
   poseDecoder: tf.LayersModel;
   strokeEncoder: tf.LayersModel;
-  allPoses: Array<Array<Array<number>>>;
+  allPoses: Array<Array<number>>;
   allStrokes: Array<Array<number>>;
   poseEncoder: tf.LayersModel;
 }> = async () => {

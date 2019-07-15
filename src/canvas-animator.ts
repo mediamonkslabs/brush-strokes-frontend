@@ -30,7 +30,7 @@ export class CanvasAnimator {
 
       this.currentFrame = floored;
       this.drawImage(this.frames[floored]);
-    }, 15);
+    }, 10);
   }
 
   public drawImage(image: ImageData) {
