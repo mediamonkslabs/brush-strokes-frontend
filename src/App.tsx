@@ -31,7 +31,7 @@ const App = () => {
   const folder = useDatGuiFolder('Neural net', false);
 
   const frames = useDatGuiValue(folder, 20, 'Frames', 1, 100);
-  const additionalFrames = useDatGuiValue(folder, 40, 'Extra frames', 1, 100);
+  const additionalFrames = useDatGuiValue(folder, 20, 'Extra frames', 1, 100);
   const additionalFramesStep = useDatGuiValue(folder, 1, 'Extra frames step', 1, 100);
 
   const [waterColorEffect, setWaterColorEffect] = useState<WatercolorEffect | null>(null);
