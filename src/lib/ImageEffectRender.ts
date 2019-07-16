@@ -14,10 +14,10 @@ class ImageEffectRendererFrameBuffer {
     this.gl = gl;
     this.type = type;
 
-    this.texture = <WebGLTexture>this.gl.createTexture();
+    this.texture = this.gl.createTexture();
     this.resize(16, 16);
 
-    this.frameBuffer = <WebGLFramebuffer>this.gl.createFramebuffer();
+    this.frameBuffer = this.gl.createFramebuffer();
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.frameBuffer);
     this.gl.framebufferTexture2D(
       this.gl.FRAMEBUFFER,
@@ -29,11 +29,11 @@ class ImageEffectRendererFrameBuffer {
   }
 
   public getTexture(): WebGLTexture {
-    return <WebGLTexture>this.texture;
+    return this.texture as WebGLTexture;
   }
 
   public getFrameBuffer(): WebGLFramebuffer {
-    return <WebGLFramebuffer>this.frameBuffer;
+    return this.frameBuffer as WebGLFramebuffer;
   }
 
   public resize(width: number, height: number) {
@@ -131,12 +131,12 @@ export class ImageEffectRendererBuffer {
     if (image instanceof ImageEffectRendererBuffer) {
       this.textures[slotIndex] = image;
     } else {
-      this.textures[slotIndex] = <WebGLTexture>this.gl.createTexture();
+      this.textures[slotIndex] = this.gl.createTexture() as WebGLTexture;
     }
 
-    this.gl.useProgram(this.program);
+    this.gl.useProgram(this.getProgram());
     this.gl.uniform1i(
-      this.gl.getUniformLocation(<WebGLProgram>this.program, 'iChannel' + slotIndex),
+      this.gl.getUniformLocation(this.getProgram(), 'iChannel' + slotIndex),
       slotIndex,
     );
 
@@ -154,7 +154,7 @@ export class ImageEffectRendererBuffer {
     if (image instanceof ImageEffectRendererBuffer) {
       this.updateTexture(
         image,
-        (<ImageEffectRendererBuffer>image).getSrc().getTexture(),
+        (image as ImageEffectRendererBuffer).getSrc().getTexture(),
         slotIndex,
         clampHorizontal,
         clampVertical,
@@ -162,14 +162,14 @@ export class ImageEffectRendererBuffer {
       );
       this.updateTexture(
         image,
-        (<ImageEffectRendererBuffer>image).getDest().getTexture(),
+        (image as ImageEffectRendererBuffer).getDest().getTexture(),
         slotIndex,
         clampHorizontal,
         clampVertical,
         useMipMap,
       );
     } else {
-      this.gl.bindTexture(this.gl.TEXTURE_2D, <WebGLTexture>this.textures[slotIndex]);
+      this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[slotIndex] as WebGLTexture);
       this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, flipY ? 1 : 0);
       this.gl.texImage2D(
         this.gl.TEXTURE_2D,
@@ -181,7 +181,7 @@ export class ImageEffectRendererBuffer {
       );
       this.updateTexture(
         image,
-        <WebGLTexture>this.textures[slotIndex],
+        this.textures[slotIndex] as WebGLTexture,
         slotIndex,
         clampHorizontal,
         clampVertical,
@@ -200,7 +200,7 @@ export class ImageEffectRendererBuffer {
   ): void {
     this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
     this.gl.uniform2f(
-      this.gl.getUniformLocation(<WebGLProgram>this.program, 'iChannelResolution' + slotIndex),
+      this.gl.getUniformLocation(this.getProgram(), 'iChannelResolution' + slotIndex),
       image.width,
       image.height,
     );
@@ -229,27 +229,27 @@ export class ImageEffectRendererBuffer {
 
   public setUniformFloat(name: string, value: number): void {
     this.gl.useProgram(this.program);
-    this.gl.uniform1f(this.gl.getUniformLocation(<WebGLProgram>this.program, name), value);
+    this.gl.uniform1f(this.gl.getUniformLocation(this.getProgram(), name), value);
   }
 
   public setUniformInt(name: string, value: number): void {
     this.gl.useProgram(this.program);
-    this.gl.uniform1i(this.gl.getUniformLocation(<WebGLProgram>this.program, name), value);
+    this.gl.uniform1i(this.gl.getUniformLocation(this.getProgram(), name), value);
   }
 
   public setUniformVec2(name: string, x: number, y: number): void {
     this.gl.useProgram(this.program);
-    this.gl.uniform2f(this.gl.getUniformLocation(<WebGLProgram>this.program, name), x, y);
+    this.gl.uniform2f(this.gl.getUniformLocation(this.getProgram(), name), x, y);
   }
 
   public setUniformVec3(name: string, x: number, y: number, z: number): void {
     this.gl.useProgram(this.program);
-    this.gl.uniform3f(this.gl.getUniformLocation(<WebGLProgram>this.program, name), x, y, z);
+    this.gl.uniform3f(this.gl.getUniformLocation(this.getProgram(), name), x, y, z);
   }
 
   public setUniformVec4(name: string, x: number, y: number, z: number, w: number): void {
     this.gl.useProgram(this.program);
-    this.gl.uniform4f(this.gl.getUniformLocation(<WebGLProgram>this.program, name), x, y, z, w);
+    this.gl.uniform4f(this.gl.getUniformLocation(this.getProgram(), name), x, y, z, w);
   }
 
   public compileShader(fsSource: string): void {
@@ -265,8 +265,8 @@ export class ImageEffectRendererBuffer {
 
     this.program = this.gl.createProgram();
 
-    const vs = <WebGLShader>this.gl.createShader(this.gl.VERTEX_SHADER);
-    const fs = <WebGLShader>this.gl.createShader(this.gl.FRAGMENT_SHADER);
+    const vs = this.gl.createShader(this.gl.VERTEX_SHADER) as WebGLShader;
+    const fs = this.gl.createShader(this.gl.FRAGMENT_SHADER) as WebGLShader;
 
     // vertex shader
     const vsSource: string = `
@@ -335,46 +335,49 @@ export class ImageEffectRendererBuffer {
     }
 
     // link shaders
-    this.gl.attachShader(<WebGLProgram>this.program, vs);
-    this.gl.attachShader(<WebGLProgram>this.program, fs);
-    this.gl.linkProgram(<WebGLProgram>this.program);
+    this.gl.attachShader(this.getProgram(), vs);
+    this.gl.attachShader(this.getProgram(), fs);
+    this.gl.linkProgram(this.getProgram());
 
-    success = this.gl.getProgramParameter(<WebGLProgram>this.program, this.gl.LINK_STATUS);
+    success = this.gl.getProgramParameter(this.getProgram(), this.gl.LINK_STATUS);
     if (!success) {
       throw new Error(
-        `ImageEffectRenderer: Program linking failed: ${this.gl.getProgramInfoLog(<WebGLProgram>(
-          this.program
-        ))}`,
+        `ImageEffectRenderer: Program linking failed: ${this.gl.getProgramInfoLog(
+          this.getProgram(),
+        )}`,
       );
     }
 
     // get attribute locations
-    this.posAttributeIndex = this.gl.getAttribLocation(<WebGLProgram>this.program, 'aPos');
-    this.uvAttributeIndex = this.gl.getAttribLocation(<WebGLProgram>this.program, 'aUV');
+    this.posAttributeIndex = this.gl.getAttribLocation(this.getProgram(), 'aPos');
+    this.uvAttributeIndex = this.gl.getAttribLocation(this.getProgram(), 'aUV');
 
     // get uniform locations
     this.gl.useProgram(this.program);
-    this.uniformGlobalTime = <WebGLUniformLocation>(
-      this.gl.getUniformLocation(<WebGLProgram>this.program, 'iGlobalTime')
-    );
-    this.uniformTime = <WebGLUniformLocation>(
-      this.gl.getUniformLocation(<WebGLProgram>this.program, 'iTime')
-    );
-    this.uniformResolution = <WebGLUniformLocation>(
-      this.gl.getUniformLocation(<WebGLProgram>this.program, 'iResolution')
-    );
+    this.uniformGlobalTime = this.gl.getUniformLocation(
+      this.getProgram(),
+      'iGlobalTime',
+    ) as WebGLUniformLocation;
+    this.uniformTime = this.gl.getUniformLocation(
+      this.getProgram(),
+      'iTime',
+    ) as WebGLUniformLocation;
+    this.uniformResolution = this.gl.getUniformLocation(
+      this.getProgram(),
+      'iResolution',
+    ) as WebGLUniformLocation;
   }
 
   public getSrc(): ImageEffectRendererFrameBuffer {
-    return <ImageEffectRendererFrameBuffer>(
-      (this.frame % 2 === 0 ? this.frameBuffer0 : this.frameBuffer1)
-    );
+    return (this.frame % 2 === 0
+      ? this.frameBuffer0
+      : this.frameBuffer1) as ImageEffectRendererFrameBuffer;
   }
 
   public getDest(): ImageEffectRendererFrameBuffer {
-    return <ImageEffectRendererFrameBuffer>(
-      (this.frame % 2 === 1 ? this.frameBuffer0 : this.frameBuffer1)
-    );
+    return (this.frame % 2 === 1
+      ? this.frameBuffer0
+      : this.frameBuffer1) as ImageEffectRendererFrameBuffer;
   }
 
   /**
@@ -408,10 +411,10 @@ export class ImageEffectRendererBuffer {
       if (this.textures[slotIndex] instanceof ImageEffectRendererBuffer) {
         this.gl.bindTexture(
           this.gl.TEXTURE_2D,
-          (<ImageEffectRendererBuffer>this.textures[slotIndex]).getSrc().getTexture(),
+          (this.textures[slotIndex] as ImageEffectRendererBuffer).getSrc().getTexture(),
         );
       } else {
-        this.gl.bindTexture(this.gl.TEXTURE_2D, <WebGLTexture>this.textures[slotIndex]);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[slotIndex] as WebGLTexture);
       }
     }
 
@@ -440,7 +443,7 @@ export class ImageEffectRendererBuffer {
     for (const k in this.textures) {
       if (this.textures[k] instanceof ImageEffectRendererBuffer) {
       } else {
-        this.gl.deleteTexture(<WebGLTexture>this.textures[k]);
+        this.gl.deleteTexture(this.textures[k] as WebGLTexture);
       }
     }
     this.textures = [];
@@ -454,6 +457,14 @@ export class ImageEffectRendererBuffer {
       this.frameBuffer1.destruct();
       this.frameBuffer1 = null;
     }
+  }
+
+  private getProgram(): WebGLProgram {
+    if (this.program === null) {
+      throw new Error('ImageEffectRenderer not initialized');
+    }
+
+    return this.program;
   }
 }
 
@@ -505,9 +516,9 @@ export default class ImageEffectRenderer {
     this.animationLoop = animationLoop;
 
     this.canvas = document.createElement('canvas');
-    this.gl = <WebGLRenderingContext>(
-      this.canvas.getContext('experimental-webgl', { premultipliedAlpha: true })
-    );
+    this.gl = this.canvas.getContext('experimental-webgl', {
+      premultipliedAlpha: true,
+    }) as WebGLRenderingContext;
 
     if (!this.gl) {
       throw new Error('ImageEffectRenderer: Failed to request a 3D context, aborting...');
@@ -561,7 +572,6 @@ export default class ImageEffectRenderer {
     ier.container = container;
     ier.canvasScale = canvasScale;
     container.appendChild(ier.canvas);
-    ier.updateSize();
 
     if (!ier.quadVBO) {
       ier.generateNDCQuad();
@@ -645,18 +655,17 @@ export default class ImageEffectRenderer {
     return this.buffers[i];
   }
 
-  public updateSize(): void {
-    this.canvas.width = this.container.offsetWidth * this.canvasScale;
-    this.canvas.height = this.container.offsetHeight * this.canvasScale;
-
-    this.canvas.style.width = `${this.container.offsetWidth}px`;
-    this.canvas.style.height = `${this.container.offsetHeight}px`;
+  public updateSize(width: number, height: number): void {
+    this.canvas.width = width;
+    this.canvas.height = height;
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
   }
 
   private generateNDCQuad(): void {
     // prettier-ignore
     const vertices: Float32Array = new Float32Array([-1, 1, 0, 1, -1, -1, 0, 0, 1, 1, 1, 1, 1, -1, 1, 0]);
-    this.quadVBO = <WebGLBuffer>this.gl.createBuffer();
+    this.quadVBO = this.gl.createBuffer() as WebGLBuffer;
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.quadVBO);
     this.gl.bufferData(this.gl.ARRAY_BUFFER, vertices, this.gl.STATIC_DRAW);
   }

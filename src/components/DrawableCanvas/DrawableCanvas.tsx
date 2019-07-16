@@ -1,4 +1,4 @@
-import React, { createRef, useCallback, useEffect, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useState } from 'react';
 import { applyBackground, get2DContext, scaleImage } from '../../lib/canvas';
 import { useDatGuiValue } from '../../lib/use-dat-gui-value';
 import { useDatGuiFolder } from '../../lib/use-dat-gui-folder';
@@ -9,6 +9,7 @@ export interface Props {
   onDraw: (imageData: ImageData) => void;
   scaleX: number;
   scaleY: number;
+  ref?: React.Ref<HTMLCanvasElement>;
 }
 
 const clear = (ctx: CanvasRenderingContext2D) => {
@@ -35,125 +36,126 @@ const drawBetweenPoints = (
   context.closePath();
 };
 
-const DrawableCanvas: React.FunctionComponent<Props> = ({
-  width,
-  height,
-  onDraw,
-  scaleX,
-  scaleY,
-}) => {
-  const canvasRef = createRef<HTMLCanvasElement>();
-  const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
-  const [previousMouse, setPreviousMouse] = useState<{ x: number; y: number }>({ x: -1, y: -1 });
-  const [mouseDown, setMouseDown] = useState<boolean>(false);
-  const [strokeLength, setStrokeLength] = useState<number>(0);
-  const folder = useDatGuiFolder('Drawable', false);
-  const brushSize = useDatGuiValue(folder, 5, 'brush size', 1, 100);
-  const maxStrokeLength = useDatGuiValue(folder, 250, 'max stroke length', 1, 1000);
-  const blur = useDatGuiValue(folder, 5, 'blur', 1, 100);
+const DrawableCanvas = forwardRef<HTMLCanvasElement, Props>(
+  ({ width, height, onDraw, scaleX, scaleY }, ref: React.Ref<HTMLCanvasElement>) => {
+    // forwardRef is not typed correctly, so we recast it to the proper type.
+    const canvasRef = ref as React.RefObject<HTMLCanvasElement>;
 
-  const pointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    setStrokeLength(0);
-    setPreviousMouse({
-      x: event.nativeEvent.offsetX * devicePixelRatio,
-      y: event.nativeEvent.offsetY * devicePixelRatio,
-    });
-    setMouseDown(true);
-  };
+    const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
+    const [previousMouse, setPreviousMouse] = useState<{ x: number; y: number }>({ x: -1, y: -1 });
+    const [mouseDown, setMouseDown] = useState<boolean>(false);
+    const [strokeLength, setStrokeLength] = useState<number>(0);
+    const folder = useDatGuiFolder('Drawable canvas', false);
+    const brushSize = useDatGuiValue(folder, 5, 'brush size', 1, 100);
+    const maxStrokeLength = useDatGuiValue(folder, 250, 'max stroke length', 1, 1000);
+    const blur = useDatGuiValue(folder, 5, 'blur', 1, 100);
 
-  const pointerUp = useCallback(() => {
-    // drawFromPrevious(event.offsetX, event.offsetY);
-    if (!mouseDown) {
-      return;
-    }
+    const pointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
+      setStrokeLength(0);
+      setPreviousMouse({
+        x: event.nativeEvent.offsetX * devicePixelRatio,
+        y: event.nativeEvent.offsetY * devicePixelRatio,
+      });
+      setMouseDown(true);
+    };
 
-    setMouseDown(false);
+    const pointerUp = useCallback(() => {
+      // drawFromPrevious(event.offsetX, event.offsetY);
+      if (!mouseDown) {
+        return;
+      }
 
-    if (context === null) {
-      return;
-    }
+      setMouseDown(false);
 
-    onDraw(
-      applyBackground(
-        scaleImage(
-          context.getImageData(0, 0, context.canvas.width, context.canvas.height),
-          context.canvas.width / devicePixelRatio,
-          context.canvas.height / devicePixelRatio,
-        ),
-        '#ffffff',
-      ),
-    );
-    clear(context);
-  }, [context, mouseDown, onDraw]);
-
-  const pointerMove = useCallback(
-    (event: React.PointerEvent) => {
       if (context === null) {
         return;
       }
-      if (mouseDown && brushSize !== null) {
-        const x = event.nativeEvent.offsetX * devicePixelRatio;
-        const y = event.nativeEvent.offsetY * devicePixelRatio;
-        context.lineWidth = brushSize * devicePixelRatio;
-        context.filter = `blur(${blur}px)`;
-        setStrokeLength(0);
 
-        const distance =
-          strokeLength +
-          Math.hypot(previousMouse.x / scaleX - x / scaleX, previousMouse.y / scaleY - y / scaleY);
-        setStrokeLength(distance);
+      onDraw(
+        applyBackground(
+          scaleImage(
+            context.getImageData(0, 0, context.canvas.width, context.canvas.height),
+            context.canvas.width / devicePixelRatio,
+            context.canvas.height / devicePixelRatio,
+          ),
+          '#ffffff',
+        ),
+      );
+      clear(context);
+    }, [context, mouseDown, onDraw]);
 
-        if (distance > maxStrokeLength) {
+    const pointerMove = useCallback(
+      (event: React.PointerEvent) => {
+        if (context === null) {
           return;
         }
+        if (mouseDown && brushSize !== null) {
+          const x = event.nativeEvent.offsetX * devicePixelRatio;
+          const y = event.nativeEvent.offsetY * devicePixelRatio;
+          context.lineWidth = brushSize * devicePixelRatio;
+          context.filter = `blur(${blur}px)`;
+          setStrokeLength(0);
 
-        drawBetweenPoints(
-          context,
-          previousMouse.x / scaleX,
-          previousMouse.y / scaleY,
-          x / scaleX,
-          y / scaleY,
-        );
+          const distance =
+            strokeLength +
+            Math.hypot(
+              previousMouse.x / scaleX - x / scaleX,
+              previousMouse.y / scaleY - y / scaleY,
+            );
+          setStrokeLength(distance);
 
-        setPreviousMouse({ x, y });
+          if (distance > maxStrokeLength) {
+            return;
+          }
+
+          drawBetweenPoints(
+            context,
+            previousMouse.x / scaleX,
+            previousMouse.y / scaleY,
+            x / scaleX,
+            y / scaleY,
+          );
+
+          setPreviousMouse({ x, y });
+        }
+      },
+      [
+        context,
+        mouseDown,
+        previousMouse,
+        scaleX,
+        scaleY,
+        brushSize,
+        blur,
+        strokeLength,
+        maxStrokeLength,
+      ],
+    );
+
+    useEffect(() => {
+      if (context !== null) {
+        clear(context);
       }
-    },
-    [
-      context,
-      mouseDown,
-      previousMouse,
-      scaleX,
-      scaleY,
-      brushSize,
-      blur,
-      strokeLength,
-      maxStrokeLength,
-    ],
-  );
+    }, [context]);
 
-  useEffect(() => {
-    if (context !== null) {
-      clear(context);
-    }
-  }, [context]);
+    useEffect(() => {
+      if (canvasRef !== null && canvasRef.current !== null && context === null) {
+        const newContext = get2DContext(canvasRef.current);
+        setContext(newContext);
+      }
+    }, [canvasRef, context]);
 
-  useEffect(() => {
-    if (canvasRef.current !== null && context === null) {
-      const newContext = get2DContext(canvasRef.current);
-      setContext(newContext);
-    }
-  }, [canvasRef, context]);
-
-  return (
-    <canvas
-      width={width * devicePixelRatio}
-      ref={canvasRef}
-      height={height * devicePixelRatio}
-      onPointerMove={pointerMove}
-      onPointerUp={pointerUp}
-      onPointerDown={pointerDown}
-    />
-  );
-};
+    return (
+      <canvas
+        width={width * devicePixelRatio}
+        ref={canvasRef}
+        height={height * devicePixelRatio}
+        onPointerMove={pointerMove}
+        onPointerUp={pointerUp}
+        onPointerDown={pointerDown}
+      />
+    );
+  },
+);
 
 export default DrawableCanvas;

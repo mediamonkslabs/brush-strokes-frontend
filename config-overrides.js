@@ -1,22 +1,21 @@
 module.exports = function override(config, env) {
-  //do stuff with the webpack config...
+  // exclude *.glsl from file-loader
+  config.module.rules[config.module.rules.length - 1].oneOf.unshift(
+    {
+      test: /\.glsl$/,
+      use: 'raw-loader',
+    },
+    {
+      test: /\.worker$/,
+      use: 'comlink-loader',
+    },
+  );
+
   return {
     ...config,
     output: {
       ...config.output,
       globalObject: 'this'
     },
-    module: {
-      ...config.module,
-      rules: [
-        {
-          test: /\.worker$/,
-          use: [
-            { loader: 'comlink-loader' }
-          ],
-        },
-        ...config.module.rules,
-      ]
-    }
   };
 };
