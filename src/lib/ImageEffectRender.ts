@@ -656,6 +656,8 @@ export default class ImageEffectRenderer {
   }
 
   public updateSize(width: number, height: number): void {
+    this.canvas.width = width;
+    this.canvas.height = height;
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
   }

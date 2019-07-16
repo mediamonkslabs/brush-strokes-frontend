@@ -66,8 +66,6 @@ const App = () => {
           canvasFitContainerRef.current,
           drawCanvasRef.current,
           outCanvasRef.current,
-          CANVAS_WIDTH * 2,
-          CANVAS_HEIGHT * 2,
         ),
       );
     }

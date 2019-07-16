@@ -14,8 +14,6 @@ export default class WatercolorEffect {
     private canvasWrapper: HTMLElement,
     private drawCanvas: HTMLCanvasElement,
     private nnCanvas: HTMLCanvasElement,
-    private canvasWidth: number,
-    private canvasHeight: number,
   ) {
     this.imageEffectRenderer = ImageEffectRenderer.createTemporary(
       canvasWrapper as HTMLElement,
@@ -24,8 +22,6 @@ export default class WatercolorEffect {
     );
 
     this.imageEffectRenderer.getCanvas().style.pointerEvents = 'none';
-    this.imageEffectRenderer.getCanvas().setAttribute('width', canvasWidth.toString());
-    this.imageEffectRenderer.getCanvas().setAttribute('height', canvasHeight.toString());
 
     this.imageEffectRenderer.addBuffer(0, inputShader);
     this.loadImage(this.imageEffectRenderer.getBuffer(0), imgNoise, 0);
