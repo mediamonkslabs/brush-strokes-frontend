@@ -7,6 +7,7 @@ import { ScaleMode, useElementFit } from 'use-element-fit';
 import { useDatGuiValue } from './lib/use-dat-gui-value';
 import { useDatGuiFolder } from './lib/use-dat-gui-folder';
 import WatercolorEffect from './watercolor-effect';
+import { get2DContext } from './lib/canvas';
 
 enum AppState {
   INITIAL_DRAW = 'initial',
@@ -19,6 +20,8 @@ const CANVAS_HEIGHT = 256;
 const App = () => {
   const [appState, setAppState] = useState(AppState.INITIAL_DRAW);
   const outCanvasRef = createRef<HTMLCanvasElement>();
+  const drawCanvasRef = createRef<HTMLCanvasElement>();
+  const canvasFitContainerRef = createRef<HTMLDivElement>();
   const [appWorker, setAppWorker] = useState<NNWorker | null>(null);
   const [canvasAnimator, setDrawableCanvasAnimator] = useState<CanvasAnimator | null>(null);
   const [nnDataLoading, setNNDataLoading] = useState(false);
@@ -43,11 +46,32 @@ const App = () => {
     if (outCanvasRef.current !== null && canvasAnimator === null) {
       setDrawableCanvasAnimator(new CanvasAnimator(outCanvasRef.current));
     }
-
-    if (!waterColorEffect) {
-      setWaterColorEffect(new WatercolorEffect(canvasContainerRef.current, outCanvasRef.current));
-    }
   }, [canvasAnimator, outCanvasRef, canvasContainerRef, waterColorEffect]);
+
+  useEffect(() => {
+    if (
+      waterColorEffect === null &&
+      canvasFitContainerRef.current !== null &&
+      outCanvasRef.current !== null &&
+      drawCanvasRef.current !== null
+    ) {
+      get2DContext(drawCanvasRef.current).fillStyle = 'white';
+      get2DContext(drawCanvasRef.current).fillRect(0, 0, 512, 512);
+
+      get2DContext(outCanvasRef.current).fillStyle = 'white';
+      get2DContext(outCanvasRef.current).fillRect(0, 0, 512, 512);
+
+      setWaterColorEffect(
+        new WatercolorEffect(
+          canvasFitContainerRef.current,
+          drawCanvasRef.current,
+          outCanvasRef.current,
+          CANVAS_WIDTH * 2,
+          CANVAS_HEIGHT * 2,
+        ),
+      );
+    }
+  }, [canvasFitContainerRef, waterColorEffect, outCanvasRef, drawCanvasRef]);
 
   useEffect(() => {
     (async () => {
@@ -61,6 +85,12 @@ const App = () => {
     })();
   }, [appWorker, nnDataLoading]);
 
+  useEffect(() => {
+    if (waterColorEffect !== null) {
+      waterColorEffect.updateSize(canvasWidth, canvasHeight);
+    }
+  }, [canvasWidth, canvasHeight, waterColorEffect]);
+
   const listener = useCallback(
     async (next: ImageData) => {
       if (appWorker !== null && outCanvasRef.current !== null && canvasAnimator !== null) {
@@ -72,32 +102,17 @@ const App = () => {
 
         if (appState === AppState.INITIAL_DRAW) {
           setAppState(AppState.CONTINUE_DRAW);
-
-          const nextFrames = await appWorker.getNextFrames(
-            next,
-            frames,
-            additionalFrames,
-            additionalFramesStep,
-          );
-
-          canvasAnimator.addFrames(nextFrames);
-          canvasAnimator.animate();
-
-          return;
         }
 
-        if (appState === AppState.CONTINUE_DRAW) {
-          // generate animation
-          const nextFrames = await appWorker.getNextFrames(
-            next,
-            frames,
-            additionalFrames,
-            additionalFramesStep,
-          );
+        const nextFrames = await appWorker.getNextFrames(
+          next,
+          frames,
+          additionalFrames,
+          additionalFramesStep,
+        );
 
-          canvasAnimator.addFrames(nextFrames);
-          canvasAnimator.animate();
-        }
+        canvasAnimator.addFrames(nextFrames);
+        canvasAnimator.animate();
       }
     },
     [
@@ -120,6 +135,7 @@ const App = () => {
       </div>
       <div className={styles.canvasContainer} ref={canvasContainerRef as RefObject<HTMLDivElement>}>
         <div
+          ref={canvasFitContainerRef}
           className={styles.canvasScaleContainer}
           style={{
             width: `${canvasWidth}px`,
@@ -128,13 +144,9 @@ const App = () => {
             top: `${canvasY}px`,
           }}
         >
-          <canvas
-            ref={outCanvasRef}
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
-            className={styles.canvas}
-          />
+          <canvas ref={outCanvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} />
           <DrawableCanvas
+            ref={drawCanvasRef}
             width={CANVAS_WIDTH}
             height={CANVAS_HEIGHT}
             onDraw={listener}

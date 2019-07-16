@@ -572,7 +572,6 @@ export default class ImageEffectRenderer {
     ier.container = container;
     ier.canvasScale = canvasScale;
     container.appendChild(ier.canvas);
-    ier.updateSize();
 
     if (!ier.quadVBO) {
       ier.generateNDCQuad();
@@ -656,12 +655,9 @@ export default class ImageEffectRenderer {
     return this.buffers[i];
   }
 
-  public updateSize(): void {
-    this.canvas.width = this.container.offsetWidth * this.canvasScale;
-    this.canvas.height = this.container.offsetHeight * this.canvasScale;
-
-    this.canvas.style.width = `${this.container.offsetWidth}px`;
-    this.canvas.style.height = `${this.container.offsetHeight}px`;
+  public updateSize(width: number, height: number): void {
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
   }
 
   private generateNDCQuad(): void {
