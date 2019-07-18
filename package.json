@@ -9,7 +9,6 @@
     "@types/jest": "^24.0.15",
     "@types/react": "^16.8.23",
     "comlink": "^4.0.1",
-    "comlink-loader": "^1.1.0",
     "cross-env": "^5.2.0",
     "dat-gui": "^0.5.0",
     "husky": "^2.7.0",
@@ -33,7 +32,8 @@
     "tslint-plugin-prettier": "^2.0.1",
     "typescript": "^3.5.3",
     "use-element-fit": "^0.4.0",
-    "worker-loader": "^2.0.0"
+    "worker-loader": "^2.0.0",
+    "workerize-loader": "^1.0.4"
   },
   "scripts": {
     "start": "react-app-rewired start",
