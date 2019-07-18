@@ -1,6 +1,5 @@
 import React, { createRef, RefObject, useCallback, useEffect, useState } from 'react';
 import styles from './App.module.css';
-import { NNWorker } from './workers/app.worker';
 import { CanvasAnimator } from './canvas-animator';
 import DrawableCanvas from './components/DrawableCanvas';
 import { ScaleMode, useElementFit } from 'use-element-fit';
@@ -8,6 +7,9 @@ import { useDatGuiValue } from './lib/use-dat-gui-value';
 import { useDatGuiFolder } from './lib/use-dat-gui-folder';
 import WatercolorEffect from './watercolor-effect';
 import { get2DContext } from './lib/canvas';
+import Worker from './workers/nn.worker';
+
+const worker = Worker();
 
 enum AppState {
   INITIAL_DRAW = 'initial',
@@ -22,7 +24,7 @@ const App = () => {
   const outCanvasRef = createRef<HTMLCanvasElement>();
   const drawCanvasRef = createRef<HTMLCanvasElement>();
   const canvasFitContainerRef = createRef<HTMLDivElement>();
-  const [appWorker, setAppWorker] = useState<NNWorker | null>(null);
+  const [appWorker, setAppWorker] = useState<{ next: typeof worker.next } | null>(null);
   const [canvasAnimator, setDrawableCanvasAnimator] = useState<CanvasAnimator | null>(null);
   const [nnDataLoading, setNNDataLoading] = useState(false);
 
@@ -75,9 +77,9 @@ const App = () => {
     (async () => {
       if (appWorker === null && !nnDataLoading) {
         setNNDataLoading(true);
-        const worker: NNWorker = await new NNWorker();
-        await worker.init();
-        setAppWorker(worker);
+        await worker.ready;
+        await worker.load();
+        setAppWorker({ next: worker.next });
         setNNDataLoading(false);
       }
     })();
@@ -102,7 +104,7 @@ const App = () => {
           setAppState(AppState.CONTINUE_DRAW);
         }
 
-        const nextFrames = await appWorker.getNextFrames(
+        const nextFrames = await appWorker.next(
           next,
           frames,
           additionalFrames,

@@ -2829,24 +2829,10 @@ combined-stream@^1.0.6, combined-stream@~1.0.6:
   dependencies:
     delayed-stream "~1.0.0"
 
-comlink-loader@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/comlink-loader/-/comlink-loader-1.1.0.tgz#77711b0aa16d916fafca96c8049a5ff7e9cbfefa"
-  integrity sha512-XrHEKyj+BcLdhAu+e6OLUrsOvNgCmmSUQWlx2hKaJzV3dbkSa/KdlNNnMzYX4WTuBQEqggUgYteugHrn+/lC6g==
-  dependencies:
-    comlinkjs "^2.4.1"
-    loader-utils "^1.1.0"
-    worker-loader "^2.0.0"
-
 comlink@^4.0.1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/comlink/-/comlink-4.0.1.tgz#b20d0fca012ef80cf7eae89b76e4b43b2a1a0e6d"
   integrity sha512-xEI50m6xEff5aZ29Epd+eNP+Plq2xTcUXGDJeWNqptudNB0hr59NV2KIi1xz6igb/Y2azKKSAj4ehI3wgGbREw==
-
-comlinkjs@^2.4.1:
-  version "2.4.1"
-  resolved "https://registry.yarnpkg.com/comlinkjs/-/comlinkjs-2.4.1.tgz#db4d40edd477f8eef9a8a1b460844f41f5a6dcdb"
-  integrity sha512-nifSjuwsqqNg2vq1vcFuKhqclFUA1R0Fal0vjE/TDXqOlaG4h9XRe2MRe2Wy+5aHVzqK/pI+03U327j2hFn1Zg==
 
 comma-separated-tokens@^1.0.0:
   version "1.0.6"
@@ -11446,6 +11432,13 @@ worker-rpc@^0.1.0:
   integrity sha512-P1WjMrUB3qgJNI9jfmpZ/htmBEjFh//6l/5y8SD9hg1Ef5zTTVVoRjTrTEzPrNBQvmhMxkoTsjOXN10GWU7aCg==
   dependencies:
     microevent.ts "~0.1.1"
+
+workerize-loader@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/workerize-loader/-/workerize-loader-1.0.4.tgz#5e7d1b7775e842399be50a761e0c4dd902ff42f1"
+  integrity sha512-HMTr/zpuZhm8dbhcK52cMYmn57uf7IJeMZJil+5lL/vC5+AO9wzxZ0FISkGVj78No7HcpaINwAWHGCYx3dnsTw==
+  dependencies:
+    loader-utils "^1.1.0"
 
 wrap-ansi@^2.0.0:
   version "2.1.0"
