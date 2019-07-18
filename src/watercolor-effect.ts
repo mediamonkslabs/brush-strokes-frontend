@@ -67,6 +67,14 @@ export default class WatercolorEffect {
     this.imageEffectRenderer.getBuffer(0).updateImage(canvasInput, 1);
   }
 
+  public updateInputCanvas(canvasInput: HTMLCanvasElement) {
+    this.imageEffectRenderer.getBuffer(0).updateImage(canvasInput, 1);
+  }
+
+  public updateNNCanvas(canvasNN: HTMLCanvasElement) {
+    this.imageEffectRenderer.getBuffer(0).updateImage(canvasNN, 0);
+  }
+
   private update(time: number) {
     window.requestAnimationFrame(time => this.update(time));
 
