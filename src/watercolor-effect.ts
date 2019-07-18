@@ -8,8 +8,9 @@ import imgNoise from './images/shadertoyNoise.png';
 import imgStructure from './images/structure.jpg';
 
 export default class WatercolorEffect {
-  private static SIMULATION_STEPS: number = 8;
+  private static SIMULATION_STEPS: number = 1;
   private imageEffectRenderer: ImageEffectRenderer;
+  private frame: number = 0;
 
   constructor(
     private canvasWrapper: HTMLElement,
@@ -33,9 +34,10 @@ export default class WatercolorEffect {
       this.imageEffectRenderer
         .getBuffer(i + 1)
         .addImage(this.imageEffectRenderer.getBuffer(Math.max(1, i)), 0);
+      // .addImage(this.imageEffectRenderer.getBuffer(i + 1), 0);
       this.loadImage(this.imageEffectRenderer.getBuffer(i + 1), imgNoise, 1);
       this.imageEffectRenderer.getBuffer(i + 1).addImage(this.imageEffectRenderer.getBuffer(0), 2);
-      this.imageEffectRenderer.getBuffer(i + 1).setUniformFloat('_Reset', i == 0 ? 1 : 0);
+      // this.imageEffectRenderer.getBuffer(i + 1).setUniformFloat('_Reset', i == 0 ? 1 : 0);
     }
 
     this.imageEffectRenderer.addImage(
@@ -71,5 +73,6 @@ export default class WatercolorEffect {
     this.updateCanvas(this.nnCanvas, this.drawCanvas);
 
     this.imageEffectRenderer.draw(time);
+    this.frame++;
   }
 }

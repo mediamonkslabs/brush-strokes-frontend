@@ -1,11 +1,18 @@
-const float _InputStrength = 0.04;
-const float _FadeOutStrength = 0.01;
+const float _InputStrength = 0.075;
+const float _FadeOutStrength = 0.025;
 
 float hash13(vec3 p3) {
     p3  = fract(p3 * .1031);
     p3 += dot(p3, p3.yzx + 19.19);
     return fract((p3.x + p3.y) * p3.z);
 }
+
+vec2 hash22(vec2 p) {
+	vec3 p3 = fract(vec3(p.xyx) * vec3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yzx+19.19);
+    return fract((p3.xx+p3.yz)*p3.zy);
+}
+
 vec4 getInput(vec2 pos) {
     vec4 inp = texture2D(iChannel2, pos / iResolution);
 
@@ -43,14 +50,11 @@ void mainImage(out vec4 c, vec2 p) {
     float wx = abs(v0.g - v1.g);
     float wy = abs(v2.g - v3.g);
 
-    fragColor.xyz = wx > wy ?
-    mix(avg, (v0 + v1) * 0.5, 0.75)
-    : mix(avg, (v2 + v3) * 0.5, 0.75);
-
-    fragColor.rgb = mix(fragColor.rgb, (v3 * 8.0 + v2 * 6.0 + v0 + v1) / 16.0, 0.5);
+    fragColor.rgb = wx > wy ? mix(avg, (v0 + v1) * .5, .75) : mix(avg, (v2 + v3) * .5, .75);
+//    fragColor.rgb = mix(fragColor.rgb, (v3 * 8. + v2 * 6. + v0 + v1) / 16., .5);
 
     fragColor.rgb *= (1.-_FadeOutStrength);
     float h = hash13(vec3(p, iTime));
-    fragColor.rgb = max(vec3(0.), fragColor.rgb - h*h*(1./256.));
+    fragColor.rgb = max(vec3(0.), fragColor.rgb - h*(1./256.));
     c = fragColor;
 }
