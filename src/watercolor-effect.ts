@@ -8,6 +8,7 @@ import imgNoise from './images/shadertoyNoise.png';
 import imgStructure from './images/structure.jpg';
 
 export default class WatercolorEffect {
+  private static SIMULATION_STEPS: number = 8;
   private imageEffectRenderer: ImageEffectRenderer;
 
   constructor(
@@ -27,12 +28,20 @@ export default class WatercolorEffect {
     this.loadImage(this.imageEffectRenderer.getBuffer(0), imgNoise, 0);
     this.loadImage(this.imageEffectRenderer.getBuffer(0), imgNoise, 1);
 
-    this.imageEffectRenderer.addBuffer(1, dynamicsShader);
-    this.imageEffectRenderer.getBuffer(1).addImage(this.imageEffectRenderer.getBuffer(1), 0);
-    this.loadImage(this.imageEffectRenderer.getBuffer(1), imgNoise, 1);
-    this.imageEffectRenderer.getBuffer(1).addImage(this.imageEffectRenderer.getBuffer(0), 2);
+    for (let i = 0; i < WatercolorEffect.SIMULATION_STEPS; i++) {
+      this.imageEffectRenderer.addBuffer(i + 1, dynamicsShader);
+      this.imageEffectRenderer
+        .getBuffer(i + 1)
+        .addImage(this.imageEffectRenderer.getBuffer(Math.max(1, i)), 0);
+      this.loadImage(this.imageEffectRenderer.getBuffer(i + 1), imgNoise, 1);
+      this.imageEffectRenderer.getBuffer(i + 1).addImage(this.imageEffectRenderer.getBuffer(0), 2);
+      this.imageEffectRenderer.getBuffer(i + 1).setUniformFloat('_Reset', i == 0 ? 1 : 0);
+    }
 
-    this.imageEffectRenderer.addImage(this.imageEffectRenderer.getBuffer(1), 0);
+    this.imageEffectRenderer.addImage(
+      this.imageEffectRenderer.getBuffer(WatercolorEffect.SIMULATION_STEPS),
+      0,
+    );
     this.loadImage(this.imageEffectRenderer.getMainBuffer(), imgNoise, 1);
     this.imageEffectRenderer.addImage(this.imageEffectRenderer.getBuffer(0), 2);
     this.loadImage(this.imageEffectRenderer.getMainBuffer(), imgStructure, 3);

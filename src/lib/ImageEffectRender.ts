@@ -388,7 +388,6 @@ export class ImageEffectRendererBuffer {
   public draw(quadVBO: WebGLBuffer, time: number = 0, width: number, height: number): void {
     this.width = width | 0;
     this.height = height | 0;
-    this.frame++;
 
     const fb = this.getDest();
     if (fb) {
@@ -433,6 +432,8 @@ export class ImageEffectRendererBuffer {
     if (fb) {
       this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
     }
+
+    this.frame++;
   }
 
   public getShaderSource(): string {
