@@ -120,15 +120,12 @@ const predictStroke = (strokeEncoder: tf.LayersModel, imgData: ImageData): tf.Te
 };
 
 // Stu, not sure if you want to keep this a separate function or extend getClosestVector
-const getClosestPoseVector = (
-  allPoses: Array<Array<Array<number>>>,
-  prediction: number[],
-): number => {
+const getClosestPoseVector = (allPoses: Array<Array<number>>, prediction: number[]): number => {
   let distWinner = 100000;
   let winner: number = 0;
 
   allPoses.forEach(vector => {
-    const dist = eucDistance(prediction, vector[0]);
+    const dist = eucDistance(prediction, vector);
     if (dist < distWinner) {
       distWinner = dist;
       winner = allPoses.indexOf(vector);
@@ -152,7 +149,7 @@ const predictPose = (
 ): tf.Tensor<tf.Rank.R3> => {
   return tf.tidy(() => {
     let tensor = tf.tensor(closest);
-    tensor = tensor.reshape([1, 20]);
+    tensor = tensor.reshape([1, 22]);
     // get the prediction
     const posePred = poseDecoder.predict(tensor);
 
@@ -186,7 +183,7 @@ const getLatentVector = async (
 
 const getAdditionalFrames = async (
   poseDecoder: tf.LayersModel,
-  allPoses: Array<Array<Array<number>>>,
+  allPoses: Array<Array<number>>,
   latentVector: number,
   frameCount: number,
   frameStep: number,
@@ -195,7 +192,7 @@ const getAdditionalFrames = async (
     range(0, frameCount * frameStep, frameStep).map(async n => {
       return await generateImageFromVector(
         poseDecoder,
-        allPoses[latentVector + n][0],
+        allPoses[latentVector + n],
         CANVAS_WIDTH,
         CANVAS_HEIGHT,
       );
@@ -207,7 +204,7 @@ export const next = async (
   data: {
     poseDecoder: tf.LayersModel;
     strokeEncoder: tf.LayersModel;
-    allPoses: Array<Array<Array<number>>>;
+    allPoses: Array<Array<number>>;
     allStrokes: Array<Array<number>>;
     poseEncoder: tf.LayersModel;
   },
@@ -235,17 +232,13 @@ export const next = async (
     );
   }
 
-  const intermediateVector = slerp(
-    allPoses[previousLatentVector][0],
-    allPoses[nextLatentVector][0],
-    0.5,
-  );
+  const intermediateVector = slerp(allPoses[previousLatentVector], allPoses[nextLatentVector], 0.5);
 
   const intermediateVectorIndex = getClosestPoseVector(allPoses, intermediateVector);
-  const closestIntermediateVector = allPoses[intermediateVectorIndex][0];
+  const closestIntermediateVector = allPoses[intermediateVectorIndex];
 
-  const previousPose = previousLatentVector ? allPoses[previousLatentVector][0] : [];
-  const nextPose = allPoses[nextLatentVector][0];
+  const previousPose = previousLatentVector ? allPoses[previousLatentVector] : [];
+  const nextPose = allPoses[nextLatentVector];
 
   previousStrokeVectors.push(
     nextLatentVector +
