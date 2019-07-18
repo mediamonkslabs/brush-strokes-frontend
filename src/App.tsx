@@ -6,7 +6,7 @@ import { ScaleMode, useElementFit } from 'use-element-fit';
 import { useDatGuiValue } from './lib/use-dat-gui-value';
 import { useDatGuiFolder } from './lib/use-dat-gui-folder';
 import WatercolorEffect from './watercolor-effect';
-import { get2DContext } from './lib/canvas';
+import { createCanvas, get2DContext } from './lib/canvas';
 import Worker from './workers/nn.worker';
 
 const worker = Worker();
@@ -21,7 +21,8 @@ const CANVAS_HEIGHT = 256;
 
 const App = () => {
   const [appState, setAppState] = useState(AppState.INITIAL_DRAW);
-  const outCanvasRef = createRef<HTMLCanvasElement>();
+  const outCanvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+
   const drawCanvasRef = createRef<HTMLCanvasElement>();
   const canvasFitContainerRef = createRef<HTMLDivElement>();
   const [appWorker, setAppWorker] = useState<{ next: typeof worker.next } | null>(null);
@@ -45,33 +46,32 @@ const App = () => {
   } = useElementFit(CANVAS_WIDTH, CANVAS_HEIGHT, ScaleMode.COVER);
 
   useEffect(() => {
-    if (outCanvasRef.current !== null && canvasAnimator === null) {
-      setDrawableCanvasAnimator(new CanvasAnimator(outCanvasRef.current));
+    if (canvasAnimator === null) {
+      setDrawableCanvasAnimator(new CanvasAnimator(outCanvas.canvas));
     }
-  }, [canvasAnimator, outCanvasRef, canvasContainerRef, waterColorEffect]);
+  }, [canvasAnimator]);
 
   useEffect(() => {
     if (
       waterColorEffect === null &&
       canvasFitContainerRef.current !== null &&
-      outCanvasRef.current !== null &&
       drawCanvasRef.current !== null
     ) {
       get2DContext(drawCanvasRef.current).fillStyle = 'white';
       get2DContext(drawCanvasRef.current).fillRect(0, 0, 512, 512);
 
-      get2DContext(outCanvasRef.current).fillStyle = 'white';
-      get2DContext(outCanvasRef.current).fillRect(0, 0, 512, 512);
+      outCanvas.fillStyle = 'white';
+      outCanvas.fillRect(0, 0, 512, 512);
 
       setWaterColorEffect(
         new WatercolorEffect(
           canvasFitContainerRef.current,
           drawCanvasRef.current,
-          outCanvasRef.current,
+          outCanvas.canvas,
         ),
       );
     }
-  }, [canvasFitContainerRef, waterColorEffect, outCanvasRef, drawCanvasRef]);
+  }, [canvasFitContainerRef, waterColorEffect, drawCanvasRef]);
 
   useEffect(() => {
     (async () => {
@@ -93,13 +93,7 @@ const App = () => {
 
   const listener = useCallback(
     async (next: ImageData) => {
-      if (appWorker !== null && outCanvasRef.current !== null && canvasAnimator !== null) {
-        const ctx = outCanvasRef.current.getContext('2d');
-
-        if (ctx === null) {
-          return;
-        }
-
+      if (appWorker !== null && canvasAnimator !== null) {
         if (appState === AppState.INITIAL_DRAW) {
           setAppState(AppState.CONTINUE_DRAW);
         }
@@ -115,15 +109,7 @@ const App = () => {
         canvasAnimator.animate();
       }
     },
-    [
-      appWorker,
-      outCanvasRef,
-      appState,
-      canvasAnimator,
-      additionalFrames,
-      additionalFramesStep,
-      frames,
-    ],
+    [appWorker, appState, canvasAnimator, additionalFrames, additionalFramesStep, frames],
   );
 
   return (
@@ -144,7 +130,6 @@ const App = () => {
             top: `${canvasY}px`,
           }}
         >
-          <canvas ref={outCanvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} />
           <DrawableCanvas
             ref={drawCanvasRef}
             width={CANVAS_WIDTH}
