@@ -1,8 +1,8 @@
 import ImageEffectRenderer, { ImageEffectRendererBuffer } from './lib/ImageEffectRender';
 
-import blitShader from './shaders/blit.js';
-import dynamicsShader from './shaders/dynamics.js';
-import inputShader from './shaders/input.js';
+import blitShader from './shaders/blit.glsl';
+import dynamicsShader from './shaders/dynamics.glsl';
+import inputShader from './shaders/input.glsl';
 
 import imgNoise from './images/shadertoyNoise.png';
 import imgStructure from './images/structure.jpg';
@@ -10,14 +10,18 @@ import imgStructure from './images/structure.jpg';
 export default class WatercolorEffect {
   private static SIMULATION_STEPS: number = 8;
   private imageEffectRenderer: ImageEffectRenderer;
-  private readonly canvasses: NodeListOf<HTMLCanvasElement>;
 
-  constructor(canvasWrapper: HTMLElement | null, canvasElement: HTMLCanvasElement | null) {
+  constructor(
+    private canvasWrapper: HTMLElement,
+    private drawCanvas: HTMLCanvasElement,
+    private nnCanvas: HTMLCanvasElement,
+  ) {
     this.imageEffectRenderer = ImageEffectRenderer.createTemporary(
-      <HTMLElement>canvasWrapper,
+      canvasWrapper as HTMLElement,
       blitShader,
       false,
     );
+
     this.imageEffectRenderer.getCanvas().style.pointerEvents = 'none';
 
     this.imageEffectRenderer.addBuffer(0, inputShader);
@@ -42,24 +46,18 @@ export default class WatercolorEffect {
     this.imageEffectRenderer.addImage(this.imageEffectRenderer.getBuffer(0), 2);
     this.loadImage(this.imageEffectRenderer.getMainBuffer(), imgStructure, 3);
 
-    const canvasses = document.querySelectorAll('canvas');
-    for (let i = 0; i < 2; i++) {
-      const context = <CanvasRenderingContext2D>(<HTMLCanvasElement>canvasses[i]).getContext('2d');
-      context.fillStyle = 'white';
-      context.fillRect(0, 0, 512, 512);
-    }
-    this.canvasses = canvasses;
-
     this.update(0);
+  }
+
+  public updateSize(width: number, height: number) {
+    this.imageEffectRenderer.updateSize(width, height);
   }
 
   private loadImage(buffer: ImageEffectRendererBuffer, url: string, slot: number) {
     const image = new Image();
     image.crossOrigin = 'Anonymous';
     image.src = url;
-    image.onload = () => {
-      buffer.addImage(image, slot, false, false);
-    };
+    image.onload = () => buffer.addImage(image, slot, false, false);
   }
 
   public updateCanvas(canvasNN: HTMLCanvasElement, canvasInput: HTMLCanvasElement) {
@@ -70,8 +68,7 @@ export default class WatercolorEffect {
   private update(time: number) {
     window.requestAnimationFrame(time => this.update(time));
 
-    // find canvas in html page
-    this.updateCanvas(this.canvasses[0], this.canvasses[1]);
+    this.updateCanvas(this.nnCanvas, this.drawCanvas);
 
     this.imageEffectRenderer.draw(time);
   }
