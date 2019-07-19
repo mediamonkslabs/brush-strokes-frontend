@@ -60,7 +60,7 @@ const App = () => {
     height: canvasHeight,
     x: canvasX,
     y: canvasY,
-  } = useElementFit(CANVAS_WIDTH, CANVAS_HEIGHT, ScaleMode.COVER);
+  } = useElementFit(CANVAS_WIDTH, CANVAS_HEIGHT, ScaleMode.CONTAIN);
 
   useEffect(() => {
     if (waterColorEffect != null && canvasAnimator !== null) {
