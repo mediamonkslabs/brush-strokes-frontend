@@ -1,5 +1,48 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GUI, GUIController } from 'dat-gui';
+
+let gui: GUI = new GUI({ name: 'My GUI' });
+
+export const useDatGui = (): GUI | null => {
+  const [datGui, setDatGui] = useState<GUI | null>(gui);
+  useEffect(() => {
+    if (datGui === null) {
+      gui = new GUI({ name: 'My GUI', width: 0 });
+      setDatGui(gui);
+    }
+  }, [datGui]);
+
+  if (
+    process.env.REACT_APP_HIDE_DAT_GUI !== undefined &&
+    datGui !== null &&
+    datGui.domElement.parentElement !== null
+  ) {
+    datGui.domElement.parentElement.removeChild(datGui.domElement);
+  }
+
+  return datGui;
+};
+
+export const useDatGuiFolder = (folderName: string, open?: boolean): GUI => {
+  const gui = useDatGui();
+  const [folderMap, setFolderMap] = useState<{
+    [folderName: string]: GUI;
+  }>({});
+
+  if (gui !== null && folderMap[folderName] === undefined) {
+    const folder = gui.addFolder(folderName);
+    if (open === true) {
+      folder.open();
+    }
+
+    setFolderMap({
+      ...folderMap,
+      [folderName]: folder,
+    });
+  }
+
+  return folderMap[folderName] || null;
+};
 
 export function useDatGuiValue<TValue>(folder: GUI, value: TValue, label: string): TValue;
 export function useDatGuiValue<TValue>(

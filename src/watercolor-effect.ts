@@ -12,11 +12,7 @@ export default class WatercolorEffect {
   private imageEffectRenderer: ImageEffectRenderer;
   private frame: number = 0;
 
-  constructor(
-    private canvasWrapper: HTMLElement,
-    private drawCanvas: HTMLCanvasElement,
-    private nnCanvas: HTMLCanvasElement,
-  ) {
+  constructor(private canvasWrapper: HTMLElement) {
     this.imageEffectRenderer = ImageEffectRenderer.createTemporary(
       canvasWrapper as HTMLElement,
       blitShader,
@@ -77,8 +73,6 @@ export default class WatercolorEffect {
 
   private update(time: number) {
     window.requestAnimationFrame(time => this.update(time));
-
-    this.updateCanvas(this.nnCanvas, this.drawCanvas);
 
     this.imageEffectRenderer.draw(time);
     this.frame++;
