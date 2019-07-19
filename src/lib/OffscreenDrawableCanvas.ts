@@ -128,6 +128,8 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
   }
 
   private drawLine({ x: x1, y: y1 }: Point, { x: x2, y: y2 }: Point) {
+    this.context.lineWidth = this.brushSize * devicePixelRatio;
+    this.context.filter = `blur(${this.blur}px)`;
     this.context.strokeStyle = '#000000';
     this.context.lineJoin = this.context.lineCap = 'round';
     this.context.beginPath();

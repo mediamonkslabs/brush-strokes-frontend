@@ -23,55 +23,52 @@ export const useDatGui = (): GUI | null => {
   return datGui;
 };
 
-export const useDatGuiFolder = (folderName: string, open?: boolean): GUI => {
+export const useDatGuiFolder = (folderName: string, open?: boolean): GUI | null => {
   const gui = useDatGui();
-  const [folderMap, setFolderMap] = useState<{
-    [folderName: string]: GUI;
-  }>({});
+  if (gui !== null) {
+    if (Object.keys(gui.__folders).includes(folderName)) {
+      return gui.__folders[folderName as any];
+    } else {
+      const folder = gui.addFolder(folderName);
+      if (open === true) {
+        folder.open();
 
-  if (gui !== null && folderMap[folderName] === undefined) {
-    const folder = gui.addFolder(folderName);
-    if (open === true) {
-      folder.open();
+        return folder;
+      }
     }
-
-    setFolderMap({
-      ...folderMap,
-      [folderName]: folder,
-    });
   }
 
-  return folderMap[folderName] || null;
+  return null;
 };
 
-export function useDatGuiValue<TValue>(folder: GUI, value: TValue, label: string): TValue;
+export function useDatGuiValue<TValue>(folder: GUI | null, value: TValue, label: string): TValue;
 export function useDatGuiValue<TValue>(
-  folder: GUI,
+  folder: GUI | null,
   value: TValue,
   label: string,
   min: number,
   max: number,
 ): TValue;
 export function useDatGuiValue<TValue>(
-  folder: GUI,
+  folder: GUI | null,
   value: TValue,
   label: string,
   status: boolean,
 ): TValue;
 export function useDatGuiValue<TValue>(
-  folder: GUI,
+  folder: GUI | null,
   value: TValue,
   label: string,
   items: string[],
 ): TValue;
 export function useDatGuiValue<TValue>(
-  folder: GUI,
+  folder: GUI | null,
   value: TValue,
   label: string,
   items: number[],
 ): TValue;
 export function useDatGuiValue<TValue>(
-  folder: GUI,
+  folder: GUI | null,
   value: TValue,
   label: string,
   items: Object,
@@ -84,19 +81,30 @@ export function useDatGuiValue(
   min?: number | boolean | string[] | Object,
   max?: number,
 ) {
-  const [controllerMap, setControllerMap] = useState<{
-    [label: string]: GUIController;
-  }>({});
+  const [stateValue, setStateValue] = useState<typeof value>(value);
 
-  if (folder !== null && controllerMap[label] === undefined) {
-    setControllerMap({
-      ...controllerMap,
-      [label]: folder.add({ [label]: value }, label, min as any, max as any),
-    });
+  if (folder === null) {
+    return null;
   }
 
-  if (controllerMap[label] !== undefined) {
-    return controllerMap[label].getValue();
+  const existing: { [key: string]: GUIController } = folder.__controllers.reduce(
+    (acc, controller) => ({ ...acc, [Object.keys((controller as any).object)[0]]: controller }),
+    {},
+  );
+
+  let controller: GUIController | null = null;
+
+  if (existing[label] === undefined) {
+    controller = folder.add({ [label]: value }, label, min as any, max as any);
+  } else {
+    controller = existing[label];
   }
-  return null;
+
+  if (controller === null) {
+    return null;
+  }
+
+  controller.onChange((newValue: typeof value) => setStateValue(newValue));
+
+  return stateValue;
 }
