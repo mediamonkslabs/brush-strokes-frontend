@@ -5,7 +5,7 @@ export class CanvasAnimator {
   private currentFrame = 0;
   private frames: Array<ImageData> = [];
 
-  constructor(private canvas: HTMLCanvasElement) {}
+  constructor(private canvas: HTMLCanvasElement, private onUpdate: () => unknown) {}
 
   public addFrames(frames: Array<ImageData>) {
     this.frames.push(...frames);

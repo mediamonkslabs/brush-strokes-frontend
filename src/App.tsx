@@ -21,12 +21,12 @@ const CANVAS_HEIGHT = 256;
 
 const App = () => {
   const [appState, setAppState] = useState(AppState.INITIAL_DRAW);
-  const outCanvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+  const [outCanvas, setOutCanvas] = useState<CanvasRenderingContext2D | null>(null);
+  const [canvasAnimator, setCanvasAnimator] = useState<CanvasAnimator | null>(null);
 
   const drawCanvasRef = createRef<HTMLCanvasElement>();
   const canvasFitContainerRef = createRef<HTMLDivElement>();
   const [appWorker, setAppWorker] = useState<{ next: typeof worker.next } | null>(null);
-  const [canvasAnimator, setDrawableCanvasAnimator] = useState<CanvasAnimator | null>(null);
   const [nnDataLoading, setNNDataLoading] = useState(false);
 
   const folder = useDatGuiFolder('Neural net', false);
@@ -37,6 +37,12 @@ const App = () => {
 
   const [waterColorEffect, setWaterColorEffect] = useState<WatercolorEffect | null>(null);
 
+  const animatorCallback = useCallback(() => {
+    if (waterColorEffect !== null && outCanvas !== null) {
+      waterColorEffect.updateNNCanvas(outCanvas.canvas);
+    }
+  }, [waterColorEffect, outCanvas]);
+
   const {
     ref: canvasContainerRef,
     width: canvasWidth,
@@ -46,16 +52,20 @@ const App = () => {
   } = useElementFit(CANVAS_WIDTH, CANVAS_HEIGHT, ScaleMode.COVER);
 
   useEffect(() => {
-    if (canvasAnimator === null) {
-      setDrawableCanvasAnimator(new CanvasAnimator(outCanvas.canvas));
+    if (outCanvas === null) {
+      setOutCanvas(createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT));
     }
-  }, [canvasAnimator]);
+    if (canvasAnimator === null && outCanvas !== null) {
+      setCanvasAnimator(new CanvasAnimator(outCanvas.canvas, animatorCallback));
+    }
+  }, [canvasAnimator, outCanvas, canvasAnimator]);
 
   useEffect(() => {
     if (
       waterColorEffect === null &&
       canvasFitContainerRef.current !== null &&
-      drawCanvasRef.current !== null
+      drawCanvasRef.current !== null &&
+      outCanvas !== null
     ) {
       get2DContext(drawCanvasRef.current).fillStyle = 'white';
       get2DContext(drawCanvasRef.current).fillRect(0, 0, 512, 512);
@@ -71,7 +81,7 @@ const App = () => {
         ),
       );
     }
-  }, [canvasFitContainerRef, waterColorEffect, drawCanvasRef]);
+  }, [canvasFitContainerRef, waterColorEffect, drawCanvasRef, outCanvas]);
 
   useEffect(() => {
     (async () => {
@@ -116,7 +126,6 @@ const App = () => {
     <div>
       <div className={styles.title}>
         {appState === AppState.INITIAL_DRAW && <p>Draw initial pose</p>}
-
         {appState === AppState.CONTINUE_DRAW && <p>Continue drawing poses</p>}
       </div>
       <div className={styles.canvasContainer} ref={canvasContainerRef as RefObject<HTMLDivElement>}>
