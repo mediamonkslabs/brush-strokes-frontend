@@ -1,11 +1,18 @@
 import { startFrameCounter } from './lib/frame';
-import { get2DContext } from './lib/canvas';
+import { createCanvas } from './lib/canvas';
+import EventDispatcher, { createEventClass } from 'seng-event';
 
-export class CanvasAnimator {
+export class CanvasAnimatorEvent extends createEventClass<HTMLCanvasElement>()('UPDATE') {}
+
+export class CanvasAnimator extends EventDispatcher {
   private currentFrame = 0;
   private frames: Array<ImageData> = [];
+  private context: CanvasRenderingContext2D;
 
-  constructor(private canvas: HTMLCanvasElement) {}
+  constructor(private canvasWidth: number, private canvasHeight: number) {
+    super();
+    this.context = createCanvas(canvasWidth, canvasHeight);
+  }
 
   public addFrames(frames: Array<ImageData>) {
     this.frames.push(...frames);
@@ -30,12 +37,22 @@ export class CanvasAnimator {
 
       this.currentFrame = floored;
       this.drawImage(this.frames[floored]);
+      this.dispatchEvent(
+        new CanvasAnimatorEvent(CanvasAnimatorEvent.types.UPDATE, this.context.canvas),
+      );
     }, 10);
   }
 
   public drawImage(image: ImageData) {
-    const ctx = get2DContext(this.canvas);
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    ctx.putImageData(image, 0, 0, 0, 0, this.canvas.width, this.canvas.height);
+    this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
+    this.context.putImageData(
+      image,
+      0,
+      0,
+      0,
+      0,
+      this.context.canvas.width,
+      this.context.canvas.height,
+    );
   }
 }

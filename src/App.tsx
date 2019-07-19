@@ -1,15 +1,18 @@
-import React, { createRef, RefObject, useCallback, useEffect, useState } from 'react';
+import React, { createRef, RefObject, useEffect, useState } from 'react';
 import styles from './App.module.css';
-import { CanvasAnimator } from './canvas-animator';
-import DrawableCanvas from './components/DrawableCanvas';
+import { CanvasAnimator, CanvasAnimatorEvent } from './canvas-animator';
 import { ScaleMode, useElementFit } from 'use-element-fit';
-import { useDatGuiValue } from './lib/use-dat-gui-value';
-import { useDatGuiFolder } from './lib/use-dat-gui-folder';
 import WatercolorEffect from './watercolor-effect';
-import { get2DContext } from './lib/canvas';
 import Worker from './workers/nn.worker';
+import { useDatGuiFolder, useDatGuiValue } from './lib/dat-gui';
+import { createCanvasFromImageData, debugDrawImageData, get2DContext } from './lib/canvas';
+import {
+  OffscreenDrawableCanvas,
+  OffscreenDrawableCanvasEvent,
+} from './lib/OffscreenDrawableCanvas';
 
-const worker = Worker();
+type WorkerReturnType = ReturnType<typeof Worker>;
+type Next = WorkerReturnType['next'];
 
 enum AppState {
   INITIAL_DRAW = 'initial',
@@ -21,11 +24,13 @@ const CANVAS_HEIGHT = 256;
 
 const App = () => {
   const [appState, setAppState] = useState(AppState.INITIAL_DRAW);
-  const outCanvasRef = createRef<HTMLCanvasElement>();
-  const drawCanvasRef = createRef<HTMLCanvasElement>();
+  const [canvasAnimator, setCanvasAnimator] = useState<CanvasAnimator | null>(null);
+  const [drawableCanvas, setDrawableCanvas] = useState<OffscreenDrawableCanvas | null>(null);
+
   const canvasFitContainerRef = createRef<HTMLDivElement>();
-  const [appWorker, setAppWorker] = useState<{ next: typeof worker.next } | null>(null);
-  const [canvasAnimator, setDrawableCanvasAnimator] = useState<CanvasAnimator | null>(null);
+  const [appWorker, setAppWorker] = useState<{
+    next: Next;
+  } | null>(null);
   const [nnDataLoading, setNNDataLoading] = useState(false);
 
   const folder = useDatGuiFolder('Neural net', false);
@@ -34,7 +39,20 @@ const App = () => {
   const additionalFrames = useDatGuiValue(folder, 20, 'Extra frames', 1, 100);
   const additionalFramesStep = useDatGuiValue(folder, 1, 'Extra frames step', 1, 100);
 
+  const drawableFolder = useDatGuiFolder('Drawable canvas', false);
+  const brushSize = useDatGuiValue(drawableFolder, 5, 'brush size', 1, 100);
+  const maxStrokeLength = useDatGuiValue(drawableFolder, 250, 'max stroke length', 1, 1000);
+  const blur = useDatGuiValue(drawableFolder, 5, 'blur', 1, 100);
+
   const [waterColorEffect, setWaterColorEffect] = useState<WatercolorEffect | null>(null);
+
+  useEffect(() => {
+    if (drawableCanvas !== null) {
+      drawableCanvas.brushSize = brushSize;
+      drawableCanvas.maxStrokeLength = maxStrokeLength;
+      drawableCanvas.blur = blur;
+    }
+  }, [brushSize, maxStrokeLength, blur, drawableCanvas]);
 
   const {
     ref: canvasContainerRef,
@@ -45,38 +63,108 @@ const App = () => {
   } = useElementFit(CANVAS_WIDTH, CANVAS_HEIGHT, ScaleMode.COVER);
 
   useEffect(() => {
-    if (outCanvasRef.current !== null && canvasAnimator === null) {
-      setDrawableCanvasAnimator(new CanvasAnimator(outCanvasRef.current));
+    if (waterColorEffect != null && canvasAnimator !== null) {
+      const listener = ({ data }: CanvasAnimatorEvent) => {
+        waterColorEffect.updateNNCanvas(data);
+        debugDrawImageData(get2DContext(data).getImageData(0, 0, data.width, data.height));
+      };
+
+      canvasAnimator.addEventListener(CanvasAnimatorEvent.types.UPDATE, listener);
+
+      return () => {
+        canvasAnimator.removeEventListener(CanvasAnimatorEvent.types.UPDATE, listener);
+      };
     }
-  }, [canvasAnimator, outCanvasRef, canvasContainerRef, waterColorEffect]);
+  });
 
   useEffect(() => {
-    if (
-      waterColorEffect === null &&
-      canvasFitContainerRef.current !== null &&
-      outCanvasRef.current !== null &&
-      drawCanvasRef.current !== null
-    ) {
-      get2DContext(drawCanvasRef.current).fillStyle = 'white';
-      get2DContext(drawCanvasRef.current).fillRect(0, 0, 512, 512);
+    if (drawableCanvas !== null) {
+      drawableCanvas.eventScaleX = canvasWidth / CANVAS_WIDTH;
+      drawableCanvas.eventScaleY = canvasHeight / CANVAS_HEIGHT;
+    }
+  }, [canvasWidth, canvasHeight, drawableCanvas]);
 
-      get2DContext(outCanvasRef.current).fillStyle = 'white';
-      get2DContext(outCanvasRef.current).fillRect(0, 0, 512, 512);
+  useEffect(() => {
+    if (canvasAnimator === null) {
+      setCanvasAnimator(new CanvasAnimator(CANVAS_WIDTH, CANVAS_HEIGHT));
+    }
+  }, [canvasAnimator]);
 
-      setWaterColorEffect(
-        new WatercolorEffect(
+  useEffect(() => {
+    if (waterColorEffect === null && canvasFitContainerRef.current !== null) {
+      setWaterColorEffect(new WatercolorEffect(canvasFitContainerRef.current));
+    }
+  }, [canvasFitContainerRef, waterColorEffect]);
+
+  useEffect(() => {
+    if (drawableCanvas !== null && appWorker !== null && canvasAnimator !== null) {
+      const draw = ({ data }: OffscreenDrawableCanvasEvent) => {
+        debugDrawImageData(data);
+        if (waterColorEffect !== null) {
+          waterColorEffect.updateInputCanvas(createCanvasFromImageData(data).canvas);
+        }
+      };
+      drawableCanvas.addEventListener(OffscreenDrawableCanvasEvent.types.DRAW, draw);
+      return () => {
+        drawableCanvas.removeEventListener(OffscreenDrawableCanvasEvent.types.DRAW, draw);
+      };
+    }
+  }, [drawableCanvas, appWorker, appState, waterColorEffect, canvasAnimator]);
+
+  useEffect(() => {
+    if (drawableCanvas !== null && appWorker !== null && canvasAnimator !== null) {
+      const finish = async ({ data }: OffscreenDrawableCanvasEvent) => {
+        if (appState === AppState.INITIAL_DRAW) {
+          setAppState(AppState.CONTINUE_DRAW);
+        }
+
+        const nextFrames = await appWorker.next(
+          data,
+          frames,
+          additionalFrames,
+          additionalFramesStep,
+        );
+
+        canvasAnimator.addFrames(nextFrames);
+        canvasAnimator.animate();
+      };
+      drawableCanvas.addEventListener(OffscreenDrawableCanvasEvent.types.DRAW_COMPLETE, finish);
+      return () => {
+        drawableCanvas.removeEventListener(
+          OffscreenDrawableCanvasEvent.types.DRAW_COMPLETE,
+          finish,
+        );
+      };
+    }
+  }, [
+    drawableCanvas,
+    appWorker,
+    appState,
+    additionalFrames,
+    additionalFramesStep,
+    canvasAnimator,
+    frames,
+  ]);
+
+  useEffect(() => {
+    if (canvasFitContainerRef.current !== null && drawableCanvas === null) {
+      setDrawableCanvas(
+        new OffscreenDrawableCanvas(
           canvasFitContainerRef.current,
-          drawCanvasRef.current,
-          outCanvasRef.current,
+          CANVAS_WIDTH,
+          CANVAS_HEIGHT,
+          canvasWidth / CANVAS_WIDTH,
+          canvasHeight / CANVAS_HEIGHT,
         ),
       );
     }
-  }, [canvasFitContainerRef, waterColorEffect, outCanvasRef, drawCanvasRef]);
+  }, [waterColorEffect, canvasFitContainerRef, drawableCanvas, canvasWidth, canvasHeight]);
 
   useEffect(() => {
     (async () => {
       if (appWorker === null && !nnDataLoading) {
         setNNDataLoading(true);
+        const worker = Worker();
         await worker.ready;
         await worker.load();
         setAppWorker({ next: worker.next });
@@ -91,46 +179,10 @@ const App = () => {
     }
   }, [canvasWidth, canvasHeight, waterColorEffect]);
 
-  const listener = useCallback(
-    async (next: ImageData) => {
-      if (appWorker !== null && outCanvasRef.current !== null && canvasAnimator !== null) {
-        const ctx = outCanvasRef.current.getContext('2d');
-
-        if (ctx === null) {
-          return;
-        }
-
-        if (appState === AppState.INITIAL_DRAW) {
-          setAppState(AppState.CONTINUE_DRAW);
-        }
-
-        const nextFrames = await appWorker.next(
-          next,
-          frames,
-          additionalFrames,
-          additionalFramesStep,
-        );
-
-        canvasAnimator.addFrames(nextFrames);
-        canvasAnimator.animate();
-      }
-    },
-    [
-      appWorker,
-      outCanvasRef,
-      appState,
-      canvasAnimator,
-      additionalFrames,
-      additionalFramesStep,
-      frames,
-    ],
-  );
-
   return (
     <div>
       <div className={styles.title}>
         {appState === AppState.INITIAL_DRAW && <p>Draw initial pose</p>}
-
         {appState === AppState.CONTINUE_DRAW && <p>Continue drawing poses</p>}
       </div>
       <div className={styles.canvasContainer} ref={canvasContainerRef as RefObject<HTMLDivElement>}>
@@ -143,17 +195,7 @@ const App = () => {
             left: `${canvasX}px`,
             top: `${canvasY}px`,
           }}
-        >
-          <canvas ref={outCanvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} />
-          <DrawableCanvas
-            ref={drawCanvasRef}
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
-            onDraw={listener}
-            scaleX={canvasWidth / CANVAS_WIDTH}
-            scaleY={canvasHeight / CANVAS_HEIGHT}
-          />
-        </div>
+        ></div>
       </div>
       {nnDataLoading && (
         <div className={styles.loading}>

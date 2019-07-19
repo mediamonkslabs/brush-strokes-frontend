@@ -33,15 +33,31 @@ export const scaleImage = (imageData: ImageData, width: number, height: number):
   return ctx.getImageData(0, 0, width, height);
 };
 
-export const debugDrawImageData = (data: ImageData) => {
+export const debugDrawImageData = (() => {
   const offscreenCanvas = document.createElement('canvas');
-  offscreenCanvas.setAttribute('width', data.width.toString());
-  offscreenCanvas.setAttribute('height', data.height.toString());
-  const ctx = get2DContext(offscreenCanvas);
-  document.body.appendChild(offscreenCanvas);
+  offscreenCanvas.style.setProperty('position', 'absolute');
+  offscreenCanvas.style.setProperty('z-index', '999999');
+  offscreenCanvas.style.setProperty('top', '0');
+  offscreenCanvas.style.setProperty('left', '0');
+  offscreenCanvas.style.setProperty('pointer-events', 'none');
 
-  ctx.putImageData(data, 0, 0, 0, 0, data.width, data.height);
-};
+  if (process.env.NODE_ENV === 'development') {
+    document.body.appendChild(offscreenCanvas);
+  }
+
+  return (data: ImageData) => {
+    if (process.env.NODE_ENV === 'development') {
+      offscreenCanvas.setAttribute('width', data.width.toString());
+      offscreenCanvas.setAttribute('height', data.height.toString());
+      offscreenCanvas.style.setProperty('width', `${data.width / 10}px`);
+      offscreenCanvas.style.setProperty('height', `${data.height / 10}px`);
+      const ctx = get2DContext(offscreenCanvas);
+      ctx.clearRect(0, 0, data.width, data.height);
+
+      ctx.putImageData(data, 0, 0, 0, 0, data.width, data.height);
+    }
+  };
+})();
 
 export const applyBackground = (imageData: ImageData, background: string): ImageData => {
   const outCanvas = createCanvas(imageData.width, imageData.height);

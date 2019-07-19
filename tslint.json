@@ -12,6 +12,7 @@
     "no-debugger": true,
     "no-console": true,
     "prefer-array-literal": [true, { "allow-type-parameters": true }],
+    "array-type": [true, "generic"],
     "variable-name": [true, "allow-pascal-case"],
     "strict-boolean-expressions": false,
     "import-name": false,

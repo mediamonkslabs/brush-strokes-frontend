@@ -1,8 +1,4 @@
-const util = require('util');
-
 module.exports = function override(config, env) {
-  console.log(util.inspect(config.module.rules[config.module.rules.length - 1].oneOf, { depth: null }));
-
   config.module.rules[config.module.rules.length - 1].oneOf.unshift({
     test: /\.glsl$/,
     loader: 'raw-loader',
