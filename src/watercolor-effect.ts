@@ -6,6 +6,7 @@ import inputShader from './shaders/input.glsl';
 
 import imgNoise from './images/shadertoyNoise.png';
 import imgStructure from './images/structure.jpg';
+import imgEmpty from './images/empty.jpg';
 
 export default class WatercolorEffect {
   private static SIMULATION_STEPS: number = 1;
@@ -22,8 +23,8 @@ export default class WatercolorEffect {
     this.imageEffectRenderer.getCanvas().style.pointerEvents = 'none';
 
     this.imageEffectRenderer.addBuffer(0, inputShader);
-    this.loadImage(this.imageEffectRenderer.getBuffer(0), imgNoise, 0);
-    this.loadImage(this.imageEffectRenderer.getBuffer(0), imgNoise, 1);
+    this.loadImage(this.imageEffectRenderer.getBuffer(0), imgEmpty, 0);
+    this.loadImage(this.imageEffectRenderer.getBuffer(0), imgEmpty, 1);
 
     for (let i = 0; i < WatercolorEffect.SIMULATION_STEPS; i++) {
       this.imageEffectRenderer.addBuffer(i + 1, dynamicsShader);
@@ -40,6 +41,7 @@ export default class WatercolorEffect {
       this.imageEffectRenderer.getBuffer(WatercolorEffect.SIMULATION_STEPS),
       0,
     );
+
     this.loadImage(this.imageEffectRenderer.getMainBuffer(), imgNoise, 1);
     this.imageEffectRenderer.addImage(this.imageEffectRenderer.getBuffer(0), 2);
     this.loadImage(this.imageEffectRenderer.getMainBuffer(), imgStructure, 3);
@@ -56,11 +58,6 @@ export default class WatercolorEffect {
     image.crossOrigin = 'Anonymous';
     image.src = url;
     image.onload = () => buffer.addImage(image, slot, false, false);
-  }
-
-  public updateCanvas(canvasNN: HTMLCanvasElement, canvasInput: HTMLCanvasElement) {
-    this.imageEffectRenderer.getBuffer(0).updateImage(canvasNN, 0);
-    this.imageEffectRenderer.getBuffer(0).updateImage(canvasInput, 1);
   }
 
   public updateInputCanvas(canvasInput: HTMLCanvasElement) {
