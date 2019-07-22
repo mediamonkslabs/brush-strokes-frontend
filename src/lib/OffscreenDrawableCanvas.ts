@@ -15,6 +15,7 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
   private isPointerDown = false;
 
   private context: CanvasRenderingContext2D;
+  private pointerId: number | undefined;
 
   public brushSize: number = 5;
   public blur: number = 5;
@@ -56,6 +57,8 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
     if (this.isPointerDown === true) {
       return;
     }
+    event.preventDefault();
+    this.pointerId = event.pointerId;
 
     this.isPointerDown = true;
     this.currentStrokeLength = 0;
@@ -64,9 +67,11 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
   }
 
   private onPointerUp(event: PointerEvent) {
-    if (this.isPointerDown === false) {
+    if (this.isPointerDown === false || this.pointerId !== event.pointerId) {
       return;
     }
+
+    event.preventDefault();
 
     this.isPointerDown = false;
 
@@ -85,9 +90,10 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
   }
 
   private onPointerMove(event: PointerEvent) {
-    if (this.isPointerDown === false) {
+    if (this.isPointerDown === false || this.pointerId !== event.pointerId) {
       return;
     }
+    event.preventDefault();
 
     const x = event.offsetX * devicePixelRatio;
     const y = event.offsetY * devicePixelRatio;
