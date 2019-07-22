@@ -36,12 +36,12 @@ const App = () => {
   const folder = useDatGuiFolder('Neural net', false);
 
   const frames = useDatGuiValue(folder, 20, 'Frames', 1, 100);
-  const additionalFrames = useDatGuiValue(folder, 20, 'Extra frames', 1, 100);
+  const additionalFrames = useDatGuiValue(folder, 40, 'Extra frames', 1, 100);
   const additionalFramesStep = useDatGuiValue(folder, 1, 'Extra frames step', 1, 100);
 
   const drawableFolder = useDatGuiFolder('Drawable canvas', false);
   const brushSize = useDatGuiValue(drawableFolder, 5, 'brush size', 1, 100);
-  const maxStrokeLength = useDatGuiValue(drawableFolder, 250, 'max stroke length', 1, 1000);
+  const maxStrokeLength = useDatGuiValue(drawableFolder, 200, 'max stroke length', 1, 1000);
   const blur = useDatGuiValue(drawableFolder, 5, 'blur', 1, 100);
 
   const [waterColorEffect, setWaterColorEffect] = useState<WatercolorEffect | null>(null);
