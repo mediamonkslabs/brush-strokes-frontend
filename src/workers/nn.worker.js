@@ -11,4 +11,5 @@ export const load = async () => {
   data = await loadModels();
 };
 
+// eslint-disable-next-line no-native-reassign
 export default Worker = () => ({ load, next, ready: Promise.resolve() });
