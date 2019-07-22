@@ -1,3 +1,5 @@
+uniform float _FrameReset;
+
 const float _InputStrength = 0.075;
 const float _FadeOutStrength = 0.025;
 
@@ -30,6 +32,8 @@ vec4 getInput(vec2 pos) {
 vec4 sampleTex(vec2 pos) {
     vec4 src = texture2D(iChannel0, pos / iResolution);
     vec4 inp = getInput(pos);
+
+//    if (_FrameReset > .5) src.rg = mix(src.rg, inp.rg * _InputStrength, .5);
 
     return mix(src, inp, inp * inp * _InputStrength);
 }

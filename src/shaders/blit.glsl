@@ -2,6 +2,8 @@
 #define N(a) (a.yx*vec2(1,-1))
 #define PI 3.14159265358979
 
+uniform vec2 _StructureOffset;
+
 vec2 getInput(vec2 pos) {
     return texture2D(iChannel2, pos/iResolution.xy).xy;
 }
@@ -51,7 +53,7 @@ void mainImage( out vec4 c, vec2 p ) {
   vec2 fc = p.xy;
   vec2 vUV = p/iResolution.xy;
 
-  float emb = getNoise(fc + .5).x - getNoise(fc - .5).x;
+  float emb = getNoise(fc + .5 + _StructureOffset*256.).x - getNoise(fc - .5 + _StructureOffset*256.).x;
 
   vec4 fragColor = texture2D(iChannel0, vUV);
   fragColor.rgb = clamp(fragColor.rgb, vec3(0), vec3(1));
@@ -79,7 +81,7 @@ void mainImage( out vec4 c, vec2 p ) {
   col *= 1. - .7 * pow(b, .5);
 //  col *= 1. + pow(b, .5);
 
-  vec3 structure = texture2D(iChannel3, fc / 512.).rgb;
+  vec3 structure = texture2D(iChannel3, fc / 512. + _StructureOffset).rgb;
   col *= .4+.6*smoothstep(.7, .975, structure.r);
 
   fragColor.rgb = 1.-col;

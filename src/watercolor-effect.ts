@@ -11,7 +11,8 @@ import imgEmpty from './images/empty.jpg';
 export default class WatercolorEffect {
   private static SIMULATION_STEPS: number = 1;
   private imageEffectRenderer: ImageEffectRenderer;
-  private frame: number = 0;
+  private frameReset: boolean = false;
+  private structureOffset: number[] = [0, 0];
 
   constructor(private canvasWrapper: HTMLElement) {
     this.imageEffectRenderer = ImageEffectRenderer.createTemporary(
@@ -31,10 +32,9 @@ export default class WatercolorEffect {
       this.imageEffectRenderer
         .getBuffer(i + 1)
         .addImage(this.imageEffectRenderer.getBuffer(Math.max(1, i)), 0);
-      // .addImage(this.imageEffectRenderer.getBuffer(i + 1), 0);
       this.loadImage(this.imageEffectRenderer.getBuffer(i + 1), imgNoise, 1);
       this.imageEffectRenderer.getBuffer(i + 1).addImage(this.imageEffectRenderer.getBuffer(0), 2);
-      // this.imageEffectRenderer.getBuffer(i + 1).setUniformFloat('_Reset', i == 0 ? 1 : 0);
+      this.imageEffectRenderer.getBuffer(i + 1).setUniformFloat('_FrameReset', 0);
     }
 
     this.imageEffectRenderer.addImage(
@@ -66,12 +66,27 @@ export default class WatercolorEffect {
 
   public updateNNCanvas(canvasNN: HTMLCanvasElement) {
     this.imageEffectRenderer.getBuffer(0).updateImage(canvasNN, 0);
+    this.frameReset = true;
   }
 
   private update(time: number) {
     window.requestAnimationFrame(time => this.update(time));
 
+    if (this.frameReset) {
+      this.structureOffset[0] = Math.random();
+      this.structureOffset[1] = Math.random();
+      this.frameReset = false;
+      this.imageEffectRenderer.getBuffer(1).setUniformFloat('_FrameReset', 1);
+    } else {
+      this.imageEffectRenderer.getBuffer(1).setUniformFloat('_FrameReset', 0);
+    }
+
+    this.imageEffectRenderer.setUniformVec2(
+      '_StructureOffset',
+      this.structureOffset[0],
+      this.structureOffset[1],
+    );
+
     this.imageEffectRenderer.draw(time);
-    this.frame++;
   }
 }
