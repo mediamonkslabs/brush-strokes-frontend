@@ -14,16 +14,10 @@ import {
 type WorkerReturnType = ReturnType<typeof Worker>;
 type Next = WorkerReturnType['next'];
 
-enum AppState {
-  INITIAL_DRAW = 'initial',
-  CONTINUE_DRAW = 'continue',
-}
-
 const CANVAS_WIDTH = 512;
 const CANVAS_HEIGHT = 256;
 
 const App = () => {
-  const [appState, setAppState] = useState(AppState.INITIAL_DRAW);
   const [canvasAnimator, setCanvasAnimator] = useState<CanvasAnimator | null>(null);
   const [drawableCanvas, setDrawableCanvas] = useState<OffscreenDrawableCanvas | null>(null);
 
@@ -31,8 +25,6 @@ const App = () => {
   const [appWorker, setAppWorker] = useState<{
     next: Next;
   } | null>(null);
-  const [nnDataLoading, setNNDataLoading] = useState(false);
-
   const folder = useDatGuiFolder('Neural net', false);
 
   const frames = useDatGuiValue(folder, 20, 'Frames', 1, 100);
@@ -109,15 +101,11 @@ const App = () => {
         drawableCanvas.removeEventListener(OffscreenDrawableCanvasEvent.types.DRAW, draw);
       };
     }
-  }, [drawableCanvas, appWorker, appState, waterColorEffect, canvasAnimator]);
+  }, [drawableCanvas, appWorker, waterColorEffect, canvasAnimator]);
 
   useEffect(() => {
     if (drawableCanvas !== null && appWorker !== null && canvasAnimator !== null) {
       const finish = async ({ data }: OffscreenDrawableCanvasEvent) => {
-        if (appState === AppState.INITIAL_DRAW) {
-          setAppState(AppState.CONTINUE_DRAW);
-        }
-
         const nextFrames = await appWorker.next(
           data,
           frames,
@@ -136,15 +124,7 @@ const App = () => {
         );
       };
     }
-  }, [
-    drawableCanvas,
-    appWorker,
-    appState,
-    additionalFrames,
-    additionalFramesStep,
-    canvasAnimator,
-    frames,
-  ]);
+  }, [drawableCanvas, appWorker, additionalFrames, additionalFramesStep, canvasAnimator, frames]);
 
   useEffect(() => {
     if (canvasFitContainerRef.current !== null && drawableCanvas === null) {
@@ -162,16 +142,25 @@ const App = () => {
 
   useEffect(() => {
     (async () => {
-      if (appWorker === null && !nnDataLoading) {
-        setNNDataLoading(true);
-        const worker = Worker();
+      if (appWorker === null && waterColorEffect !== null && !waterColorEffect.loadState) {
+        waterColorEffect.loadState = true;
+        const worker: any = Worker();
+
+        const listener = (event: MessageEvent) => {
+          if (event.data.type === 'progress') {
+            waterColorEffect.loadProgress = event.data.value;
+          }
+        };
+        worker.addEventListener('message', listener);
+
         await worker.ready;
         await worker.load();
+        worker.removeEventListener('message', listener);
         setAppWorker({ next: worker.next });
-        setNNDataLoading(false);
+        waterColorEffect.loadState = false;
       }
     })();
-  }, [appWorker, nnDataLoading]);
+  }, [appWorker, waterColorEffect]);
 
   useEffect(() => {
     if (waterColorEffect !== null) {
@@ -181,10 +170,6 @@ const App = () => {
 
   return (
     <div>
-      <div className={styles.title}>
-        {appState === AppState.INITIAL_DRAW && <p>Draw initial pose</p>}
-        {appState === AppState.CONTINUE_DRAW && <p>Continue drawing poses</p>}
-      </div>
       <div className={styles.canvasContainer} ref={canvasContainerRef as RefObject<HTMLDivElement>}>
         <div
           ref={canvasFitContainerRef}
@@ -197,11 +182,6 @@ const App = () => {
           }}
         ></div>
       </div>
-      {nnDataLoading && (
-        <div className={styles.loading}>
-          <p>Loading models</p>
-        </div>
-      )}
     </div>
   );
 };

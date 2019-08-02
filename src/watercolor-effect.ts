@@ -14,6 +14,25 @@ export default class WatercolorEffect {
   private frameReset: boolean = false;
   private structureOffset: number[] = [0, 0];
 
+  private _loadState = false;
+  private _loadProgress = 0;
+
+  public get loadState() {
+    return this._loadState;
+  }
+
+  public set loadState(value: boolean) {
+    this._loadState = value;
+  }
+
+  public set loadProgress(progress: number) {
+    this._loadProgress = progress;
+  }
+
+  public get loadProgress(): number {
+    return this._loadProgress;
+  }
+
   constructor(private canvasWrapper: HTMLElement) {
     this.imageEffectRenderer = ImageEffectRenderer.createTemporary(
       canvasWrapper as HTMLElement,
