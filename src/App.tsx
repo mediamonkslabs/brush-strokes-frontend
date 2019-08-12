@@ -10,6 +10,7 @@ import {
   OffscreenDrawableCanvas,
   OffscreenDrawableCanvasEvent,
 } from './lib/OffscreenDrawableCanvas';
+import Loader from './components/Loader';
 
 type WorkerReturnType = ReturnType<typeof Worker>;
 type Next = WorkerReturnType['next'];
@@ -20,6 +21,7 @@ const CANVAS_HEIGHT = 256;
 const App = () => {
   const [canvasAnimator, setCanvasAnimator] = useState<CanvasAnimator | null>(null);
   const [drawableCanvas, setDrawableCanvas] = useState<OffscreenDrawableCanvas | null>(null);
+  const [loadingProgress, setLoadingProgress] = useState<number>(0);
 
   const canvasFitContainerRef = createRef<HTMLDivElement>();
   const [appWorker, setAppWorker] = useState<{
@@ -148,6 +150,7 @@ const App = () => {
 
         const listener = (event: MessageEvent) => {
           if (event.data.type === 'progress') {
+            setLoadingProgress(event.data.value);
             waterColorEffect.loadProgress = event.data.value;
           }
         };
@@ -180,7 +183,9 @@ const App = () => {
             left: `${canvasX}px`,
             top: `${canvasY}px`,
           }}
-        ></div>
+        >
+          <Loader progress={loadingProgress} />
+        </div>
       </div>
     </div>
   );
