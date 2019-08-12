@@ -28,4 +28,6 @@ export const next = (previousStrokeVectors => (
   [],
 );
 
+// needed for TypeScript to correctly intepret what workerize-loader exports
+// eslint-disable-next-line no-native-reassign
 export default Worker = () => ({ load, next, ready: Promise.resolve() });
