@@ -11,6 +11,8 @@ import {
   OffscreenDrawableCanvasEvent,
 } from './lib/OffscreenDrawableCanvas';
 import Loader from './components/Loader';
+import spinner from './images/spinner.png';
+import classNames from 'classnames';
 
 type WorkerReturnType = ReturnType<typeof Worker>;
 type Next = WorkerReturnType['next'];
@@ -22,6 +24,7 @@ const App = () => {
   const [canvasAnimator, setCanvasAnimator] = useState<CanvasAnimator | null>(null);
   const [drawableCanvas, setDrawableCanvas] = useState<OffscreenDrawableCanvas | null>(null);
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   const canvasFitContainerRef = createRef<HTMLDivElement>();
   const [appWorker, setAppWorker] = useState<{
@@ -108,6 +111,7 @@ const App = () => {
   useEffect(() => {
     if (drawableCanvas !== null && appWorker !== null && canvasAnimator !== null) {
       const finish = async ({ data }: OffscreenDrawableCanvasEvent) => {
+        setIsProcessing(true);
         const nextFrames = await appWorker.next(
           data,
           frames,
@@ -117,6 +121,7 @@ const App = () => {
 
         canvasAnimator.addFrames(nextFrames);
         canvasAnimator.animate();
+        setIsProcessing(false);
       };
       drawableCanvas.addEventListener(OffscreenDrawableCanvasEvent.types.DRAW_COMPLETE, finish);
       return () => {
@@ -185,6 +190,12 @@ const App = () => {
           }}
         >
           <Loader progress={loadingProgress} />
+          <img
+            src={spinner}
+            className={classNames(styles.spinner, {
+              [styles.spinnerVisible]: isProcessing,
+            })}
+          />
         </div>
       </div>
     </div>
