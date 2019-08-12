@@ -153,7 +153,15 @@ const App = () => {
         );
       };
     }
-  }, [drawableCanvas, appWorker, additionalFrames, additionalFramesStep, canvasAnimator, frames]);
+  }, [
+    drawableCanvas,
+    appWorker,
+    waterColorEffect,
+    additionalFrames,
+    additionalFramesStep,
+    canvasAnimator,
+    frames,
+  ]);
 
   // create a new OffscreenDrawableCanvas
   useEffect(() => {
@@ -209,6 +217,7 @@ const App = () => {
         >
           <Loader progress={loadingProgress} />
           <img
+            alt={''}
             src={spinner}
             className={classNames(styles.spinner, {
               [styles.spinnerVisible]: isProcessing,
