@@ -59,6 +59,22 @@ const App = () => {
     y: canvasY,
   } = useElementFit(CANVAS_WIDTH, CANVAS_HEIGHT, ScaleMode.CONTAIN);
 
+  // update the size of the webgl canvas
+  useEffect(() => {
+    if (waterColorEffect !== null) {
+      waterColorEffect.updateSize(canvasWidth, canvasHeight);
+    }
+  }, [canvasWidth, canvasHeight, waterColorEffect]);
+
+  // update the size of the drawable canvas
+  useEffect(() => {
+    if (drawableCanvas !== null) {
+      drawableCanvas.eventScaleX = canvasWidth / CANVAS_WIDTH;
+      drawableCanvas.eventScaleY = canvasHeight / CANVAS_HEIGHT;
+    }
+  }, [canvasWidth, canvasHeight, drawableCanvas]);
+
+  // send frames from the animator to the webgl component
   useEffect(() => {
     if (waterColorEffect != null && canvasAnimator !== null) {
       const listener = ({ data }: CanvasAnimatorEvent) => {
@@ -74,25 +90,21 @@ const App = () => {
     }
   });
 
-  useEffect(() => {
-    if (drawableCanvas !== null) {
-      drawableCanvas.eventScaleX = canvasWidth / CANVAS_WIDTH;
-      drawableCanvas.eventScaleY = canvasHeight / CANVAS_HEIGHT;
-    }
-  }, [canvasWidth, canvasHeight, drawableCanvas]);
-
+  // create a new CanvasAnimator instnace
   useEffect(() => {
     if (canvasAnimator === null) {
       setCanvasAnimator(new CanvasAnimator(CANVAS_WIDTH, CANVAS_HEIGHT));
     }
   }, [canvasAnimator]);
 
+  // create new WebGL component instance
   useEffect(() => {
     if (waterColorEffect === null && canvasFitContainerRef.current !== null) {
       setWaterColorEffect(new WatercolorEffect(canvasFitContainerRef.current));
     }
   }, [canvasFitContainerRef, waterColorEffect]);
 
+  // update the WebGL component with the new drawing
   useEffect(() => {
     if (drawableCanvas !== null && appWorker !== null && canvasAnimator !== null) {
       const draw = ({ data }: OffscreenDrawableCanvasEvent) => {
@@ -108,6 +120,7 @@ const App = () => {
     }
   }, [drawableCanvas, appWorker, waterColorEffect, canvasAnimator]);
 
+  // process the drawing in the NN when stroke is finished
   useEffect(() => {
     if (
       drawableCanvas !== null &&
@@ -142,6 +155,7 @@ const App = () => {
     }
   }, [drawableCanvas, appWorker, additionalFrames, additionalFramesStep, canvasAnimator, frames]);
 
+  // create a new OffscreenDrawableCanvas
   useEffect(() => {
     if (canvasFitContainerRef.current !== null && drawableCanvas === null) {
       setDrawableCanvas(
@@ -156,6 +170,7 @@ const App = () => {
     }
   }, [waterColorEffect, canvasFitContainerRef, drawableCanvas, canvasWidth, canvasHeight]);
 
+  // initialize the NN worker and load the NN data
   useEffect(() => {
     (async () => {
       if (appWorker === null && waterColorEffect !== null && !waterColorEffect.loadState) {
@@ -178,12 +193,6 @@ const App = () => {
       }
     })();
   }, [appWorker, waterColorEffect]);
-
-  useEffect(() => {
-    if (waterColorEffect !== null) {
-      waterColorEffect.updateSize(canvasWidth, canvasHeight);
-    }
-  }, [canvasWidth, canvasHeight, waterColorEffect]);
 
   return (
     <div>
