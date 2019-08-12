@@ -109,7 +109,12 @@ const App = () => {
   }, [drawableCanvas, appWorker, waterColorEffect, canvasAnimator]);
 
   useEffect(() => {
-    if (drawableCanvas !== null && appWorker !== null && canvasAnimator !== null) {
+    if (
+      drawableCanvas !== null &&
+      appWorker !== null &&
+      canvasAnimator !== null &&
+      waterColorEffect !== null
+    ) {
       const finish = async ({ data }: OffscreenDrawableCanvasEvent) => {
         setIsProcessing(true);
         const nextFrames = await appWorker.next(
@@ -119,6 +124,10 @@ const App = () => {
           additionalFramesStep,
         );
 
+        // clear drawing image in WebGL
+        waterColorEffect.updateInputCanvas(
+          createCanvasFromImageData(drawableCanvas.getCurrentImage()).canvas,
+        );
         canvasAnimator.addFrames(nextFrames);
         canvasAnimator.animate();
         setIsProcessing(false);
