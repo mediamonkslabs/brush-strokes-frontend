@@ -1,18 +1,18 @@
 import React, { createRef, RefObject, useEffect, useState } from 'react';
 import styles from './App.module.css';
-import { CanvasAnimator, CanvasAnimatorEvent } from './canvas-animator';
+import Worker from '../../workers/nn.worker';
 import { ScaleMode, useElementFit } from 'use-element-fit';
-import WatercolorEffect from './watercolor-effect';
-import Worker from './workers/nn.worker';
-import { useDatGuiFolder, useDatGuiValue } from './lib/dat-gui';
-import { createCanvasFromImageData, debugDrawImageData, get2DContext } from './lib/canvas';
+import spinner from '../../images/spinner.png';
+import classNames from 'classnames';
+import { CanvasAnimator, CanvasAnimatorEvent } from '../../lib/canvas-animator';
 import {
   OffscreenDrawableCanvas,
   OffscreenDrawableCanvasEvent,
-} from './lib/OffscreenDrawableCanvas';
-import Loader from './components/Loader';
-import spinner from './images/spinner.png';
-import classNames from 'classnames';
+} from '../../lib/OffscreenDrawableCanvas';
+import WatercolorEffect from '../../lib/watercolor-effect';
+import { useDatGuiFolder, useDatGuiValue } from '../../lib/dat-gui';
+import { createCanvasFromImageData, debugDrawImageData, get2DContext } from '../../lib/canvas';
+import Loader from '../Loader';
 
 type WorkerReturnType = ReturnType<typeof Worker>;
 type Next = WorkerReturnType['next'];

@@ -1,12 +1,12 @@
-import ImageEffectRenderer, { ImageEffectRendererBuffer } from './lib/ImageEffectRender';
+import ImageEffectRenderer, { ImageEffectRendererBuffer } from './ImageEffectRender';
 
-import blitShader from './shaders/blit.glsl';
-import dynamicsShader from './shaders/dynamics.glsl';
-import inputShader from './shaders/input.glsl';
+import blitShader from '../shaders/blit.glsl';
+import dynamicsShader from '../shaders/dynamics.glsl';
+import inputShader from '../shaders/input.glsl';
 
-import imgNoise from './images/shadertoyNoise.png';
-import imgStructure from './images/structure.jpg';
-import imgEmpty from './images/empty.jpg';
+import imgNoise from '../images/shadertoyNoise.png';
+import imgStructure from '../images/structure.jpg';
+import imgEmpty from '../images/empty.jpg';
 
 export default class WatercolorEffect {
   private static SIMULATION_STEPS: number = 1;
