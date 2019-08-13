@@ -7,13 +7,15 @@ export const loadModels: () => Promise<{
   strokeEncoder: tf.LayersModel;
   allPoses: Array<Array<number>>;
   allStrokes: Array<Array<number>>;
+  allInterimPoses: Array<Array<number>>;
 }> = async () => {
   tf.serialization.registerClass(ZLayer);
-  const [strokeEncoder, poseDecoder, allStrokes, allPoses] = await Promise.all([
+  const [strokeEncoder, poseDecoder, allStrokes, allPoses, allInterimPoses] = await Promise.all([
     tf.loadLayersModel('models/encoder/model.json'),
     tf.loadLayersModel('models/vaeDecoder/model.json'),
     (await fetch('models/allStrokes.json')).json(),
     (await fetch('models/allPoses.json')).json(),
+    (await fetch('models/allInterimPoses.json')).json(),
   ]);
 
   return {
@@ -21,6 +23,7 @@ export const loadModels: () => Promise<{
     poseDecoder,
     allStrokes,
     allPoses,
+    allInterimPoses,
   };
 };
 
@@ -120,15 +123,18 @@ const predictStroke = (strokeEncoder: tf.LayersModel, imgData: ImageData): tf.Te
 };
 
 // Stu, not sure if you want to keep this a separate function or extend getClosestVector
-const getClosestPoseVector = (allPoses: Array<Array<number>>, prediction: number[]): number => {
+const getClosestPoseVector = (
+  allInterimPoses: Array<Array<number>>,
+  prediction: number[],
+): number => {
   let distWinner = 100000;
   let winner: number = 0;
 
-  allPoses.forEach(vector => {
+  allInterimPoses.forEach(vector => {
     const dist = eucDistance(prediction, vector);
     if (dist < distWinner) {
       distWinner = dist;
-      winner = allPoses.indexOf(vector);
+      winner = allInterimPoses.indexOf(vector);
     }
   });
 
@@ -205,6 +211,7 @@ export const next = async (
     poseDecoder: tf.LayersModel;
     strokeEncoder: tf.LayersModel;
     allPoses: Array<Array<number>>;
+    allInterimPoses: Array<Array<number>>;
     allStrokes: Array<Array<number>>;
     poseEncoder: tf.LayersModel;
   },
@@ -214,7 +221,7 @@ export const next = async (
   additionalFrames: number,
   additionalFramesStep: number,
 ): Promise<Array<ImageData>> => {
-  const { poseDecoder, strokeEncoder, allPoses, allStrokes } = data;
+  const { poseDecoder, strokeEncoder, allPoses, allInterimPoses, allStrokes } = data;
   const previousLatentVector = previousStrokeVectors[previousStrokeVectors.length - 1];
   const nextLatentVector = await getLatentVector(strokeEncoder, allStrokes, next);
 
