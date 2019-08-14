@@ -1,18 +1,37 @@
-import ImageEffectRenderer, { ImageEffectRendererBuffer } from './lib/ImageEffectRender';
+import ImageEffectRenderer, { ImageEffectRendererBuffer } from './ImageEffectRender';
 
-import blitShader from './shaders/blit.glsl';
-import dynamicsShader from './shaders/dynamics.glsl';
-import inputShader from './shaders/input.glsl';
+import blitShader from '../shaders/blit.glsl';
+import dynamicsShader from '../shaders/dynamics.glsl';
+import inputShader from '../shaders/input.glsl';
 
-import imgNoise from './images/shadertoyNoise.png';
-import imgStructure from './images/structure.jpg';
-import imgEmpty from './images/empty.jpg';
+import imgNoise from '../images/shadertoyNoise.png';
+import imgStructure from '../images/structure.jpg';
+import imgEmpty from '../images/empty.jpg';
 
 export default class WatercolorEffect {
   private static SIMULATION_STEPS: number = 1;
   private imageEffectRenderer: ImageEffectRenderer;
   private frameReset: boolean = false;
   private structureOffset: number[] = [0, 0];
+
+  private _loadState = false;
+  private _loadProgress = 0;
+
+  public get loadState() {
+    return this._loadState;
+  }
+
+  public set loadState(value: boolean) {
+    this._loadState = value;
+  }
+
+  public set loadProgress(progress: number) {
+    this._loadProgress = progress;
+  }
+
+  public get loadProgress(): number {
+    return this._loadProgress;
+  }
 
   constructor(private canvasWrapper: HTMLElement) {
     this.imageEffectRenderer = ImageEffectRenderer.createTemporary(

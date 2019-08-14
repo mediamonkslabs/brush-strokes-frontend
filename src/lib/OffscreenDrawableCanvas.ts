@@ -78,15 +78,19 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
     this.dispatchEvent(
       new OffscreenDrawableCanvasEvent(
         OffscreenDrawableCanvasEvent.types.DRAW_COMPLETE,
-        scaleImage(
-          this.context.getImageData(0, 0, this.context.canvas.width, this.context.canvas.height),
-          this.context.canvas.width / devicePixelRatio,
-          this.context.canvas.height / devicePixelRatio,
-        ),
+        this.getCurrentImage(),
       ),
     );
 
     this.clear();
+  }
+
+  public getCurrentImage() {
+    return scaleImage(
+      this.context.getImageData(0, 0, this.context.canvas.width, this.context.canvas.height),
+      this.context.canvas.width / devicePixelRatio,
+      this.context.canvas.height / devicePixelRatio,
+    );
   }
 
   private onPointerMove(event: PointerEvent) {

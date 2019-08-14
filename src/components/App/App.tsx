@@ -1,38 +1,35 @@
 import React, { createRef, RefObject, useEffect, useState } from 'react';
 import styles from './App.module.css';
-import { CanvasAnimator, CanvasAnimatorEvent } from './canvas-animator';
+import Worker from '../../workers/nn.worker';
 import { ScaleMode, useElementFit } from 'use-element-fit';
-import WatercolorEffect from './watercolor-effect';
-import Worker from './workers/nn.worker';
-import { useDatGuiFolder, useDatGuiValue } from './lib/dat-gui';
-import { createCanvasFromImageData, debugDrawImageData, get2DContext } from './lib/canvas';
+import spinner from '../../images/spinner.png';
+import classNames from 'classnames';
+import { CanvasAnimator, CanvasAnimatorEvent } from '../../lib/canvas-animator';
 import {
   OffscreenDrawableCanvas,
   OffscreenDrawableCanvasEvent,
-} from './lib/OffscreenDrawableCanvas';
+} from '../../lib/OffscreenDrawableCanvas';
+import WatercolorEffect from '../../lib/watercolor-effect';
+import { useDatGuiFolder, useDatGuiValue } from '../../lib/dat-gui';
+import { createCanvasFromImageData, debugDrawImageData, get2DContext } from '../../lib/canvas';
+import Loader from '../Loader';
 
 type WorkerReturnType = ReturnType<typeof Worker>;
 type Next = WorkerReturnType['next'];
-
-enum AppState {
-  INITIAL_DRAW = 'initial',
-  CONTINUE_DRAW = 'continue',
-}
 
 const CANVAS_WIDTH = 512;
 const CANVAS_HEIGHT = 256;
 
 const App = () => {
-  const [appState, setAppState] = useState(AppState.INITIAL_DRAW);
   const [canvasAnimator, setCanvasAnimator] = useState<CanvasAnimator | null>(null);
   const [drawableCanvas, setDrawableCanvas] = useState<OffscreenDrawableCanvas | null>(null);
+  const [loadingProgress, setLoadingProgress] = useState<number>(0);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   const canvasFitContainerRef = createRef<HTMLDivElement>();
   const [appWorker, setAppWorker] = useState<{
     next: Next;
   } | null>(null);
-  const [nnDataLoading, setNNDataLoading] = useState(false);
-
   const folder = useDatGuiFolder('Neural net', false);
 
   const frames = useDatGuiValue(folder, 20, 'Frames', 1, 100);
@@ -62,6 +59,22 @@ const App = () => {
     y: canvasY,
   } = useElementFit(CANVAS_WIDTH, CANVAS_HEIGHT, ScaleMode.CONTAIN);
 
+  // update the size of the webgl canvas
+  useEffect(() => {
+    if (waterColorEffect !== null) {
+      waterColorEffect.updateSize(canvasWidth, canvasHeight);
+    }
+  }, [canvasWidth, canvasHeight, waterColorEffect]);
+
+  // update the size of the drawable canvas
+  useEffect(() => {
+    if (drawableCanvas !== null) {
+      drawableCanvas.eventScaleX = canvasWidth / CANVAS_WIDTH;
+      drawableCanvas.eventScaleY = canvasHeight / CANVAS_HEIGHT;
+    }
+  }, [canvasWidth, canvasHeight, drawableCanvas]);
+
+  // send frames from the animator to the webgl component
   useEffect(() => {
     if (waterColorEffect != null && canvasAnimator !== null) {
       const listener = ({ data }: CanvasAnimatorEvent) => {
@@ -77,25 +90,21 @@ const App = () => {
     }
   });
 
-  useEffect(() => {
-    if (drawableCanvas !== null) {
-      drawableCanvas.eventScaleX = canvasWidth / CANVAS_WIDTH;
-      drawableCanvas.eventScaleY = canvasHeight / CANVAS_HEIGHT;
-    }
-  }, [canvasWidth, canvasHeight, drawableCanvas]);
-
+  // create a new CanvasAnimator instnace
   useEffect(() => {
     if (canvasAnimator === null) {
       setCanvasAnimator(new CanvasAnimator(CANVAS_WIDTH, CANVAS_HEIGHT));
     }
   }, [canvasAnimator]);
 
+  // create new WebGL component instance
   useEffect(() => {
     if (waterColorEffect === null && canvasFitContainerRef.current !== null) {
       setWaterColorEffect(new WatercolorEffect(canvasFitContainerRef.current));
     }
   }, [canvasFitContainerRef, waterColorEffect]);
 
+  // update the WebGL component with the new drawing
   useEffect(() => {
     if (drawableCanvas !== null && appWorker !== null && canvasAnimator !== null) {
       const draw = ({ data }: OffscreenDrawableCanvasEvent) => {
@@ -109,15 +118,18 @@ const App = () => {
         drawableCanvas.removeEventListener(OffscreenDrawableCanvasEvent.types.DRAW, draw);
       };
     }
-  }, [drawableCanvas, appWorker, appState, waterColorEffect, canvasAnimator]);
+  }, [drawableCanvas, appWorker, waterColorEffect, canvasAnimator]);
 
+  // process the drawing in the NN when stroke is finished
   useEffect(() => {
-    if (drawableCanvas !== null && appWorker !== null && canvasAnimator !== null) {
+    if (
+      drawableCanvas !== null &&
+      appWorker !== null &&
+      canvasAnimator !== null &&
+      waterColorEffect !== null
+    ) {
       const finish = async ({ data }: OffscreenDrawableCanvasEvent) => {
-        if (appState === AppState.INITIAL_DRAW) {
-          setAppState(AppState.CONTINUE_DRAW);
-        }
-
+        setIsProcessing(true);
         const nextFrames = await appWorker.next(
           data,
           frames,
@@ -125,8 +137,13 @@ const App = () => {
           additionalFramesStep,
         );
 
+        // clear drawing image in WebGL
+        waterColorEffect.updateInputCanvas(
+          createCanvasFromImageData(drawableCanvas.getCurrentImage()).canvas,
+        );
         canvasAnimator.addFrames(nextFrames);
         canvasAnimator.animate();
+        setIsProcessing(false);
       };
       drawableCanvas.addEventListener(OffscreenDrawableCanvasEvent.types.DRAW_COMPLETE, finish);
       return () => {
@@ -139,13 +156,14 @@ const App = () => {
   }, [
     drawableCanvas,
     appWorker,
-    appState,
+    waterColorEffect,
     additionalFrames,
     additionalFramesStep,
     canvasAnimator,
     frames,
   ]);
 
+  // create a new OffscreenDrawableCanvas
   useEffect(() => {
     if (canvasFitContainerRef.current !== null && drawableCanvas === null) {
       setDrawableCanvas(
@@ -160,31 +178,32 @@ const App = () => {
     }
   }, [waterColorEffect, canvasFitContainerRef, drawableCanvas, canvasWidth, canvasHeight]);
 
+  // initialize the NN worker and load the NN data
   useEffect(() => {
     (async () => {
-      if (appWorker === null && !nnDataLoading) {
-        setNNDataLoading(true);
-        const worker = Worker();
+      if (appWorker === null && waterColorEffect !== null && !waterColorEffect.loadState) {
+        waterColorEffect.loadState = true;
+        const worker: any = Worker();
+
+        const listener = (event: MessageEvent) => {
+          if (event.data.type === 'progress') {
+            setLoadingProgress(event.data.value);
+            waterColorEffect.loadProgress = event.data.value;
+          }
+        };
+        worker.addEventListener('message', listener);
+
         await worker.ready;
         await worker.load();
+        worker.removeEventListener('message', listener);
         setAppWorker({ next: worker.next });
-        setNNDataLoading(false);
+        waterColorEffect.loadState = false;
       }
     })();
-  }, [appWorker, nnDataLoading]);
-
-  useEffect(() => {
-    if (waterColorEffect !== null) {
-      waterColorEffect.updateSize(canvasWidth, canvasHeight);
-    }
-  }, [canvasWidth, canvasHeight, waterColorEffect]);
+  }, [appWorker, waterColorEffect]);
 
   return (
     <div>
-      <div className={styles.title}>
-        {appState === AppState.INITIAL_DRAW && <p>Draw initial pose</p>}
-        {appState === AppState.CONTINUE_DRAW && <p>Continue drawing poses</p>}
-      </div>
       <div className={styles.canvasContainer} ref={canvasContainerRef as RefObject<HTMLDivElement>}>
         <div
           ref={canvasFitContainerRef}
@@ -195,13 +214,17 @@ const App = () => {
             left: `${canvasX}px`,
             top: `${canvasY}px`,
           }}
-        ></div>
-      </div>
-      {nnDataLoading && (
-        <div className={styles.loading}>
-          <p>Loading models</p>
+        >
+          <Loader progress={loadingProgress} />
+          <img
+            alt={''}
+            src={spinner}
+            className={classNames(styles.spinner, {
+              [styles.spinnerVisible]: isProcessing,
+            })}
+          />
         </div>
-      )}
+      </div>
     </div>
   );
 };

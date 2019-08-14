@@ -1,6 +1,6 @@
-import { startFrameCounter } from './lib/frame';
-import { createCanvas } from './lib/canvas';
 import EventDispatcher, { createEventClass } from 'seng-event';
+import { createCanvas } from './canvas';
+import { startFrameCounter } from './frame';
 
 export class CanvasAnimatorEvent extends createEventClass<HTMLCanvasElement>()('UPDATE') {}
 

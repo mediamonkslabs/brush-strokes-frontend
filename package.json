@@ -5,9 +5,11 @@
   "homepage": "https://mediamonkslabs.github.io/brush-strokes-frontend/",
   "dependencies": {
     "@tensorflow/tfjs": "^1.2.2",
+    "@types/classnames": "^2.2.9",
     "@types/dat-gui": "^0.6.3",
     "@types/jest": "^24.0.15",
     "@types/react": "^16.8.23",
+    "classnames": "^2.2.6",
     "comlink": "^4.0.1",
     "cross-env": "^5.2.0",
     "dat-gui": "^0.5.0",

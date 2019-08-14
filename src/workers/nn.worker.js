@@ -2,14 +2,32 @@ import '../lib/tensorflowjs-worker-workaround';
 import { loadModels, next as _next } from '../lib/nn';
 
 let data = undefined;
-const previousStrokeVectors = [];
 
-export const next = (nextImages, frames, additionalFrames, additionalFramesStep) =>
-  _next(data, previousStrokeVectors, nextImages, frames, additionalFrames, additionalFramesStep);
+export async function load() {
+  const it = loadModels();
 
-export const load = async () => {
-  data = await loadModels();
-};
+  while (true) {
+    const val = await it.next();
+    if (val.done === true) {
+      postMessage({ type: 'progress', value: 1 });
+      data = val.value;
+      break;
+    } else {
+      postMessage({ type: 'progress', value: val.value });
+    }
+  }
+}
 
+export const next = (previousStrokeVectors => (
+  nextImages,
+  frames,
+  additionalFrames,
+  additionalFramesStep,
+) =>
+  _next(data, previousStrokeVectors, nextImages, frames, additionalFrames, additionalFramesStep))(
+  [],
+);
+
+// needed for TypeScript to correctly intepret what workerize-loader exports
 // eslint-disable-next-line no-native-reassign
 export default Worker = () => ({ load, next, ready: Promise.resolve() });

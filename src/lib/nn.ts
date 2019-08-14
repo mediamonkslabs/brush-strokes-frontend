@@ -2,27 +2,34 @@ import * as tf from '@tensorflow/tfjs';
 import { range } from 'range';
 import { ZLayer } from './ZLayer';
 
-export const loadModels: () => Promise<{
-  poseDecoder: tf.LayersModel;
-  strokeEncoder: tf.LayersModel;
-  allPoses: Array<Array<number>>;
-  allStrokes: Array<Array<number>>;
-}> = async () => {
+export async function* loadModels() {
+  let done = 0;
   tf.serialization.registerClass(ZLayer);
-  const [strokeEncoder, poseDecoder, allStrokes, allPoses] = await Promise.all([
+  const promises = [
     tf.loadLayersModel('models/encoder/model.json'),
     tf.loadLayersModel('models/vaeDecoder/model.json'),
     (await fetch('models/allStrokes.json')).json(),
     (await fetch('models/allPoses.json')).json(),
-  ]);
+  ];
+  const results = [];
 
-  return {
-    strokeEncoder,
-    poseDecoder,
-    allStrokes,
-    allPoses,
-  };
-};
+  for await (const item of promises) {
+    done++;
+    results.push(item);
+    const progress = done / promises.length;
+
+    if (progress === 1) {
+      const [strokeEncoder, poseDecoder, allStrokes, allPoses, allInterimPoses] = results;
+      return {
+        strokeEncoder,
+        poseDecoder,
+        allStrokes,
+        allPoses,
+      };
+    }
+    yield progress;
+  }
+}
 
 const CANVAS_WIDTH = 512;
 const CANVAS_HEIGHT = 256;
