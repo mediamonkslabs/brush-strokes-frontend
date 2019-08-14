@@ -10,7 +10,6 @@ export async function* loadModels() {
     tf.loadLayersModel('models/vaeDecoder/model.json'),
     (await fetch('models/allStrokes.json')).json(),
     (await fetch('models/allPoses.json')).json(),
-    (await fetch('models/allInterimPoses.json')).json(),
   ];
   const results = [];
 
@@ -26,7 +25,6 @@ export async function* loadModels() {
         poseDecoder,
         allStrokes,
         allPoses,
-        allInterimPoses,
       };
     }
     yield progress;
@@ -129,18 +127,15 @@ const predictStroke = (strokeEncoder: tf.LayersModel, imgData: ImageData): tf.Te
 };
 
 // Stu, not sure if you want to keep this a separate function or extend getClosestVector
-const getClosestPoseVector = (
-  allInterimPoses: Array<Array<number>>,
-  prediction: number[],
-): number => {
+const getClosestPoseVector = (allPoses: Array<Array<number>>, prediction: number[]): number => {
   let distWinner = 100000;
   let winner: number = 0;
 
-  allInterimPoses.forEach(vector => {
+  allPoses.forEach(vector => {
     const dist = eucDistance(prediction, vector);
     if (dist < distWinner) {
       distWinner = dist;
-      winner = allInterimPoses.indexOf(vector);
+      winner = allPoses.indexOf(vector);
     }
   });
 
@@ -217,7 +212,6 @@ export const next = async (
     poseDecoder: tf.LayersModel;
     strokeEncoder: tf.LayersModel;
     allPoses: Array<Array<number>>;
-    allInterimPoses: Array<Array<number>>;
     allStrokes: Array<Array<number>>;
     poseEncoder: tf.LayersModel;
   },
@@ -227,7 +221,7 @@ export const next = async (
   additionalFrames: number,
   additionalFramesStep: number,
 ): Promise<Array<ImageData>> => {
-  const { poseDecoder, strokeEncoder, allPoses, allInterimPoses, allStrokes } = data;
+  const { poseDecoder, strokeEncoder, allPoses, allStrokes } = data;
   const previousLatentVector = previousStrokeVectors[previousStrokeVectors.length - 1];
   const nextLatentVector = await getLatentVector(strokeEncoder, allStrokes, next);
 
