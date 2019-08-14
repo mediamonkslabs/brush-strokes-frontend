@@ -20,7 +20,7 @@ export async function* loadModels() {
     const progress = done / promises.length;
 
     if (progress === 1) {
-      const [strokeEncoder, poseDecoder, allStrokes, allPoses] = results;
+      const [strokeEncoder, poseDecoder, allStrokes, allPoses, allInterimPoses] = results;
       return {
         strokeEncoder,
         poseDecoder,
