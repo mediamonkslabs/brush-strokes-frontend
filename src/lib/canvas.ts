@@ -1,20 +1,45 @@
-export const get2DContext = (canvas: HTMLCanvasElement): CanvasRenderingContext2D => {
-  const ctx = canvas.getContext('2d');
+export function get2DContext<T extends HTMLCanvasElement>(canvas: T): CanvasRenderingContext2D;
+export function get2DContext<T extends OffscreenCanvas>(
+  canvas: T,
+): OffscreenCanvasRenderingContext2D;
+
+export function get2DContext(
+  canvas: HTMLCanvasElement | OffscreenCanvas,
+): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D {
+  const ctx = canvas.getContext('2d') as
+    | CanvasRenderingContext2D
+    | OffscreenCanvasRenderingContext2D;
 
   if (ctx === null) {
     throw new Error(`Unable to get 2d context for canvas`);
   }
 
   return ctx;
-};
+}
 
-export const createCanvas = (width: number, height: number): CanvasRenderingContext2D => {
+export function createCanvas(
+  width: number,
+  height: number,
+  offScreen: true,
+): OffscreenCanvasRenderingContext2D;
+export function createCanvas(
+  width: number,
+  height: number,
+  offScreen: false,
+): CanvasRenderingContext2D;
+export function createCanvas(width: number, height: number): CanvasRenderingContext2D;
+
+export function createCanvas(width: number, height: number, offScreen: boolean = false) {
+  if (offScreen === true) {
+    return get2DContext(new OffscreenCanvas(width, height));
+  }
+
   const c = document.createElement('canvas');
   c.setAttribute('width', width.toString());
   c.setAttribute('height', height.toString());
 
   return get2DContext(c);
-};
+}
 
 export const createCanvasFromImageData = (imageData: ImageData): CanvasRenderingContext2D => {
   const ctx = createCanvas(imageData.width, imageData.height);

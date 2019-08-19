@@ -29,14 +29,20 @@ const App = () => {
       >
         <div className={styles.header}>
           <button onClick={toggleMute} className={styles.headerButton}>
-            {muted && <img src={unmute} />}
-            {!muted && <img src={mute} />}
+            {muted && <img src={unmute} alt={'unmute'} />}
+            {!muted && <img src={mute} alt={'mute'} />}
           </button>
 
           <div className={styles.headerMenu}>
             <button className={styles.headerButton}>Share</button>
             <button className={styles.headerButton}>About</button>
-            <a className={styles.headerButton}>Source</a>
+            <a
+              href={'https://github.com/mediamonkslabs/brush-strokes-frontend'}
+              target={'_blank'}
+              className={styles.headerButton}
+            >
+              Source
+            </a>
           </div>
         </div>
         <Canvas width={width - CANVAS_GUTTER * 2} height={height - CANVAS_GUTTER * 2} />

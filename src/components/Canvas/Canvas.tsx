@@ -1,4 +1,4 @@
-import React, { useState, RefObject, createRef, useEffect } from 'react';
+import React, { createRef, useEffect, useState } from 'react';
 import { CanvasAnimator, CanvasAnimatorEvent } from '../../lib/canvas-animator';
 import {
   OffscreenDrawableCanvas,
@@ -6,7 +6,6 @@ import {
 } from '../../lib/OffscreenDrawableCanvas';
 import { useDatGuiFolder, useDatGuiValue } from '../../lib/dat-gui';
 import WatercolorEffect from '../../lib/watercolor-effect';
-import { ScaleMode, useElementFit } from 'use-element-fit';
 import { createCanvasFromImageData, debugDrawImageData, get2DContext } from '../../lib/canvas';
 import Worker from '../../workers/nn.worker';
 import styles from './Canvas.module.css';
