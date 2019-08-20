@@ -40,11 +40,13 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  text-decoration: none;
 }
 
 .headerButton:first-child {
   margin-left: 0;
 }
+
 .headerButton:last-child {
   margin-right: 0;
 }
