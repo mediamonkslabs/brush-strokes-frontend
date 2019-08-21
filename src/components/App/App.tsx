@@ -5,6 +5,8 @@ import { CANVAS_GUTTER, CANVAS_HEIGHT, CANVAS_WIDTH } from '../../settings';
 import styles from './App.module.css';
 import mute from '../../images/icons/mute.svg';
 import unmute from '../../images/icons/unmute.svg';
+import CustomCursor from '../CustomCursor';
+import cursorImage from '../../images/cursor.svg';
 
 const App = () => {
   const [muted, setMuted] = useState<boolean>(false);
@@ -12,6 +14,7 @@ const App = () => {
 
   const { ref: containerRef, width, height, x, y } = useElementFit(
     CANVAS_WIDTH + CANVAS_GUTTER * 2,
+
     CANVAS_HEIGHT + CANVAS_GUTTER * 2,
     ScaleMode.CONTAIN,
   );
@@ -45,7 +48,9 @@ const App = () => {
             </a>
           </div>
         </div>
-        <Canvas width={width - CANVAS_GUTTER * 2} height={height - CANVAS_GUTTER * 2} />
+        <CustomCursor cursorImage={cursorImage} cursorOffsetX={0} cursorOffsetY={-35}>
+          <Canvas width={width - CANVAS_GUTTER * 2} height={height - CANVAS_GUTTER * 2} />
+        </CustomCursor>
       </div>
     </div>
   );
