@@ -242,6 +242,34 @@ export const next = async (
     );
   }
 
+  const distBetweenPoses = eucDistance(
+    allCentroids[previousLatentVector],
+    allCentroids[nextLatentVector],
+  );
+
+  const numInterVals = Math.floor(distBetweenPoses / 10);
+
+  console.log(distBetweenPoses);
+
+  console.log(numInterVals);
+
+  const interimVals = tf.linspace(0, 1, numInterVals).arraySync();
+
+  const allIntermLerpedCentroids = interimVals.map(value =>
+    slerp(allCentroids[previousLatentVector], allCentroids[nextLatentVector], value),
+  );
+
+  const allPosesToGenerate = allIntermLerpedCentroids.map(value =>
+    getClosestPoseVector(allCentroids, value),
+  );
+
+  console.log(allPosesToGenerate);
+
+  allPosesToGenerate.unshift(previousLatentVector);
+  allPosesToGenerate.push(nextLatentVector);
+
+  console.log(allPosesToGenerate);
+
   const intermediateVector = slerp(
     allCentroids[previousLatentVector],
     allCentroids[nextLatentVector],
