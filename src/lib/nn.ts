@@ -2,6 +2,9 @@ import * as tf from '@tensorflow/tfjs';
 import { range } from 'range';
 import { ZLayer } from './ZLayer';
 
+const CANVAS_WIDTH = 512;
+const CANVAS_HEIGHT = 256;
+
 export async function* loadModels() {
   let done = 0;
   tf.serialization.registerClass(ZLayer);
@@ -33,14 +36,14 @@ export async function* loadModels() {
   }
 }
 
-const CANVAS_WIDTH = 512;
-const CANVAS_HEIGHT = 256;
-
-const eucDistance = (a: number[], b: number[]): number =>
-  a
-    .map((x, i) => Math.abs(x - b[i]) ** 2) // square the difference
-    .reduce((sum, now) => sum + now) ** // sum
-  (1 / 2);
+function eucDistance(a: number[], b: number[]): number {
+  return (
+    a
+      .map((x, i) => Math.abs(x - b[i]) ** 2) // square the difference
+      .reduce((sum, now) => sum + now) ** // sum
+    (1 / 2)
+  );
+}
 
 function slerp(a: Array<number>, b: Array<number>, t: number): Array<number> {
   const out: Array<number> = [];
@@ -86,10 +89,7 @@ function slerp(a: Array<number>, b: Array<number>, t: number): Array<number> {
   return out;
 }
 
-const getClosestVector = (
-  prediction: Array<Array<number>>,
-  strokes: Array<Array<number>>,
-): number => {
+function getClosestVector(prediction: Array<Array<number>>, strokes: Array<Array<number>>): number {
   let distWinner = 100000;
   let winner: number = 0;
 
@@ -102,9 +102,9 @@ const getClosestVector = (
   });
 
   return winner;
-};
+}
 
-const preprocess = (imgData: ImageData): tf.Tensor<tf.Rank> => {
+function preprocess(imgData: ImageData): tf.Tensor<tf.Rank> {
   return tf.tidy(() => {
     // convert to a tensor
     const tensor = tf.browser.fromPixels(imgData, 1).toFloat();
@@ -120,16 +120,16 @@ const preprocess = (imgData: ImageData): tf.Tensor<tf.Rank> => {
 
     return batched;
   });
-};
+}
 
-const predictStroke = (strokeEncoder: tf.LayersModel, imgData: ImageData): tf.Tensor<tf.Rank> => {
+function predictStroke(strokeEncoder: tf.LayersModel, imgData: ImageData): tf.Tensor<tf.Rank> {
   return tf.tidy(() => {
     return strokeEncoder.predict(preprocess(imgData));
   }) as tf.Tensor<tf.Rank>;
-};
+}
 
 // Stu, not sure if you want to keep this a separate function or extend getClosestVector
-const getClosestPoseVector = (allCentroids: Array<Array<number>>, prediction: number[]): number => {
+function getClosestPoseVector(allCentroids: Array<Array<number>>, prediction: number[]): number {
   let distWinner = 100000;
   let winner: number = 0;
 
@@ -142,20 +142,17 @@ const getClosestPoseVector = (allCentroids: Array<Array<number>>, prediction: nu
   });
 
   return winner;
-};
+}
 
-const postprocess = (tensor: tf.Tensor<tf.Rank.R3>, canvasWidth: number, canvasHeight: number) => {
+function postprocess(tensor: tf.Tensor<tf.Rank.R3>, canvasWidth: number, canvasHeight: number) {
   return tf.tidy(() => {
     // resize to canvas size
     const shape: tf.Tensor<tf.Rank.R3> = tensor.reshape([128, 256, 1]);
     return tf.image.resizeBilinear(shape, [canvasHeight, canvasWidth]);
   });
-};
+}
 
-const predictPose = (
-  poseDecoder: tf.LayersModel,
-  closest: Array<number>,
-): tf.Tensor<tf.Rank.R3> => {
+function predictPose(poseDecoder: tf.LayersModel, closest: Array<number>): tf.Tensor<tf.Rank.R3> {
   return tf.tidy(() => {
     let tensor = tf.tensor(closest);
     tensor = tensor.reshape([1, 22]);
@@ -164,14 +161,14 @@ const predictPose = (
 
     return posePred as tf.Tensor<tf.Rank.R3>;
   });
-};
+}
 
-const generateImageFromVector = async (
+async function generateImageFromVector(
   poseDecoder: tf.LayersModel,
   newVector: Array<number>,
   imageWidth: number,
   imageHeight: number,
-): Promise<ImageData> => {
+): Promise<ImageData> {
   const slerpedPredictedPose = predictPose(poseDecoder, newVector);
 
   return new ImageData(
@@ -179,37 +176,39 @@ const generateImageFromVector = async (
     imageWidth,
     imageHeight,
   );
-};
+}
 
-const getLatentVector = async (
+async function generateImagesFromVectors(
+  poseDecoder: tf.LayersModel,
+  vectors: Array<Array<number>>,
+): Promise<Array<ImageData>> {
+  return await Promise.all(
+    vectors.map(
+      async vector =>
+        await generateImageFromVector(poseDecoder, vector, CANVAS_WIDTH, CANVAS_HEIGHT),
+    ),
+  );
+}
+
+async function getLatentVector(
   strokeEncoder: tf.LayersModel,
   allStrokes: Array<Array<number>>,
   imageData: ImageData,
-): Promise<number> => {
+): Promise<number> {
   const prediction = predictStroke(strokeEncoder, imageData).arraySync() as number[][];
   return getClosestVector(prediction, allStrokes);
-};
+}
 
-const getAdditionalFrames = async (
-  poseDecoder: tf.LayersModel,
+function getAdditionalFrameVectors(
   allPoses: Array<Array<number>>,
   latentVector: number,
   frameCount: number,
   frameStep: number,
-): Promise<Array<ImageData>> => {
-  return await Promise.all(
-    range(0, frameCount * frameStep, frameStep).map(async n => {
-      return await generateImageFromVector(
-        poseDecoder,
-        allPoses[latentVector + n],
-        CANVAS_WIDTH,
-        CANVAS_HEIGHT,
-      );
-    }),
-  );
-};
+): Array<Array<number>> {
+  return range(0, frameCount * frameStep, frameStep).map(n => allPoses[latentVector + n]);
+}
 
-export const next = async (
+export async function next(
   data: {
     poseDecoder: tf.LayersModel;
     strokeEncoder: tf.LayersModel;
@@ -223,7 +222,7 @@ export const next = async (
   frames: number,
   additionalFrames: number,
   additionalFramesStep: number,
-): Promise<Array<ImageData>> => {
+): Promise<Array<ImageData>> {
   const { poseDecoder, strokeEncoder, allPoses, allStrokes, allCentroids } = data;
   const previousLatentVector = previousStrokeVectors[previousStrokeVectors.length - 1];
   const nextLatentVector = await getLatentVector(strokeEncoder, allStrokes, next);
@@ -233,12 +232,10 @@ export const next = async (
       nextLatentVector +
         (range(0, additionalFrames * additionalFramesStep, additionalFramesStep).pop() as number),
     );
-    return await getAdditionalFrames(
+
+    return generateImagesFromVectors(
       poseDecoder,
-      allPoses,
-      nextLatentVector,
-      additionalFrames,
-      additionalFramesStep,
+      getAdditionalFrameVectors(allPoses, nextLatentVector, additionalFrames, additionalFramesStep),
     );
   }
 
@@ -290,38 +287,23 @@ export const next = async (
   // create an array of values between 0 and 1
   const vals = tf.linspace(0, 1, frames / 2).arraySync();
 
-  return [
-    // lerp between previous pose and the found intermediate vector
-    ...(await Promise.all(
-      vals.map(
-        async value =>
-          await generateImageFromVector(
-            poseDecoder,
-            slerp(previousPose, closestIntermediateVector, value),
-            CANVAS_WIDTH,
-            CANVAS_HEIGHT,
-          ),
-      ),
-    )),
+  return generateImagesFromVectors(poseDecoder, [
+    // ...vals.map(value => slerp(previousPose, closestIntermediateVector, value)),
+    // ...vals.map(value => slerp(closestIntermediateVector, nextPose, value)),
 
-    // lerp between the found intermediate vector and the next pose
-    ...(await Promise.all(
-      vals.map(
-        async value =>
-          await generateImageFromVector(
-            poseDecoder,
-            slerp(closestIntermediateVector, nextPose, value),
-            CANVAS_WIDTH,
-            CANVAS_HEIGHT,
-          ),
-      ),
-    )),
-    ...(await getAdditionalFrames(
-      poseDecoder,
+    ...allPosesToGenerate.reduce<Array<Array<number>>>(
+      (acc, value) => [
+        ...acc,
+        ...vals.map(lerpedVal => slerp(allPoses[value], allPoses[value + 1], lerpedVal)),
+      ],
+      [],
+    ),
+
+    ...getAdditionalFrameVectors(
       allPoses,
       nextLatentVector,
       additionalFrames,
       additionalFramesStep,
-    )),
-  ];
-};
+    ),
+  ]);
+}

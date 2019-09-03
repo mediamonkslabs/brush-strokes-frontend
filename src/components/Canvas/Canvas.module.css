@@ -1,0 +1,38 @@
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.canvasScaleContainer {
+  position: relative;
+  box-shadow: 1px 3px 6px rgba(0, 0, 0, 0.33);
+  touch-action: none;
+}
+
+.canvasContainer canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+
+.spinner {
+  position: absolute;
+  bottom: 40px;
+  right: 40px;
+  z-index: 2;
+  animation: rotate 1s linear infinite;
+  width: 30px;
+  height: 30px;
+  opacity: 0;
+  transition: opacity 0.3s linear;
+}
+
+.spinnerVisible {
+  opacity: 1;
+}

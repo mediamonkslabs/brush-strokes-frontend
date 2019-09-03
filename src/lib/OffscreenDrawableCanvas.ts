@@ -1,4 +1,4 @@
-import { createCanvas, scaleImage } from './canvas';
+import { get2DContext, scaleImage } from './canvas';
 import EventDispatcher, { createEventClass } from 'seng-event';
 
 interface Point {
@@ -14,7 +14,7 @@ export class OffscreenDrawableCanvasEvent extends createEventClass<ImageData>()(
 export class OffscreenDrawableCanvas extends EventDispatcher {
   private isPointerDown = false;
 
-  private context: CanvasRenderingContext2D;
+  private context: OffscreenCanvasRenderingContext2D;
   private pointerId: number | undefined;
 
   public brushSize: number = 5;
@@ -36,7 +36,9 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
   ) {
     super();
 
-    this.context = createCanvas(canvasWidth * devicePixelRatio, canvasHeight * devicePixelRatio);
+    this.context = get2DContext(
+      new OffscreenCanvas(canvasWidth * devicePixelRatio, canvasHeight * devicePixelRatio),
+    );
 
     this.clear();
 
