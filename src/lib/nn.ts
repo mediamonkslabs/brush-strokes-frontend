@@ -288,8 +288,17 @@ export async function next(
   const vals = tf.linspace(0, 1, frames / 2).arraySync();
 
   return generateImagesFromVectors(poseDecoder, [
-    ...vals.map(value => slerp(previousPose, closestIntermediateVector, value)),
-    ...vals.map(value => slerp(closestIntermediateVector, nextPose, value)),
+    // ...vals.map(value => slerp(previousPose, closestIntermediateVector, value)),
+    // ...vals.map(value => slerp(closestIntermediateVector, nextPose, value)),
+
+    ...allPosesToGenerate.reduce<Array<Array<number>>>(
+      (acc, value) => [
+        ...acc,
+        ...vals.map(lerpedVal => slerp(allPoses[value], allPoses[value + 1], lerpedVal)),
+      ],
+      [],
+    ),
+
     ...getAdditionalFrameVectors(
       allPoses,
       nextLatentVector,
