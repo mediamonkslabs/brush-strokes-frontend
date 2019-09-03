@@ -13,6 +13,7 @@ export async function* loadModels() {
     tf.loadLayersModel('models/vaeDecoder/model.json'),
     (await fetch('models/allStrokes.json')).json(),
     (await fetch('models/allPoses.json')).json(),
+    (await fetch('models/allCentroids.json')).json(),
   ];
   const results = [];
 
@@ -22,12 +23,13 @@ export async function* loadModels() {
     const progress = done / promises.length;
 
     if (progress === 1) {
-      const [strokeEncoder, poseDecoder, allStrokes, allPoses, allInterimPoses] = results;
+      const [strokeEncoder, poseDecoder, allStrokes, allPoses, allCentroids] = results;
       return {
         strokeEncoder,
         poseDecoder,
         allStrokes,
         allPoses,
+        allCentroids,
       };
     }
     yield progress;
@@ -127,15 +129,15 @@ function predictStroke(strokeEncoder: tf.LayersModel, imgData: ImageData): tf.Te
 }
 
 // Stu, not sure if you want to keep this a separate function or extend getClosestVector
-function getClosestPoseVector(allPoses: Array<Array<number>>, prediction: number[]): number {
+function getClosestPoseVector(allCentroids: Array<Array<number>>, prediction: number[]): number {
   let distWinner = 100000;
   let winner: number = 0;
 
-  allPoses.forEach(vector => {
+  allCentroids.forEach(vector => {
     const dist = eucDistance(prediction, vector);
     if (dist < distWinner) {
       distWinner = dist;
-      winner = allPoses.indexOf(vector);
+      winner = allCentroids.indexOf(vector);
     }
   });
 
@@ -212,6 +214,7 @@ export async function next(
     strokeEncoder: tf.LayersModel;
     allPoses: Array<Array<number>>;
     allStrokes: Array<Array<number>>;
+    allCentroids: Array<Array<number>>;
     poseEncoder: tf.LayersModel;
   },
   previousStrokeVectors: Array<number>,
@@ -220,7 +223,7 @@ export async function next(
   additionalFrames: number,
   additionalFramesStep: number,
 ): Promise<Array<ImageData>> {
-  const { poseDecoder, strokeEncoder, allPoses, allStrokes } = data;
+  const { poseDecoder, strokeEncoder, allPoses, allStrokes, allCentroids } = data;
   const previousLatentVector = previousStrokeVectors[previousStrokeVectors.length - 1];
   const nextLatentVector = await getLatentVector(strokeEncoder, allStrokes, next);
 
@@ -234,36 +237,64 @@ export async function next(
       poseDecoder,
       getAdditionalFrameVectors(allPoses, nextLatentVector, additionalFrames, additionalFramesStep),
     );
-  } else {
-    const intermediateVector = slerp(
-      allPoses[previousLatentVector],
-      allPoses[nextLatentVector],
-      0.5,
-    );
-
-    const intermediateVectorIndex = getClosestPoseVector(allPoses, intermediateVector);
-    const closestIntermediateVector = allPoses[intermediateVectorIndex];
-
-    const previousPose = previousLatentVector ? allPoses[previousLatentVector] : [];
-    const nextPose = allPoses[nextLatentVector];
-
-    previousStrokeVectors.push(
-      nextLatentVector +
-        (range(0, additionalFrames * additionalFramesStep, additionalFramesStep).pop() as number),
-    );
-
-    // create an array of values between 0 and 1
-    const vals = tf.linspace(0, 1, frames / 2).arraySync();
-
-    return generateImagesFromVectors(poseDecoder, [
-      ...vals.map(value => slerp(previousPose, closestIntermediateVector, value)),
-      ...vals.map(value => slerp(closestIntermediateVector, nextPose, value)),
-      ...getAdditionalFrameVectors(
-        allPoses,
-        nextLatentVector,
-        additionalFrames,
-        additionalFramesStep,
-      ),
-    ]);
   }
+
+  const distBetweenPoses = eucDistance(
+    allCentroids[previousLatentVector],
+    allCentroids[nextLatentVector],
+  );
+
+  const numInterVals = Math.floor(distBetweenPoses / 10);
+
+  console.log(distBetweenPoses);
+
+  console.log(numInterVals);
+
+  const interimVals = tf.linspace(0, 1, numInterVals).arraySync();
+
+  const allIntermLerpedCentroids = interimVals.map(value =>
+    slerp(allCentroids[previousLatentVector], allCentroids[nextLatentVector], value),
+  );
+
+  const allPosesToGenerate = allIntermLerpedCentroids.map(value =>
+    getClosestPoseVector(allCentroids, value),
+  );
+
+  console.log(allPosesToGenerate);
+
+  allPosesToGenerate.unshift(previousLatentVector);
+  allPosesToGenerate.push(nextLatentVector);
+
+  console.log(allPosesToGenerate);
+
+  const intermediateVector = slerp(
+    allCentroids[previousLatentVector],
+    allCentroids[nextLatentVector],
+    0.5,
+  );
+
+  const intermediateVectorIndex = getClosestPoseVector(allCentroids, intermediateVector);
+  const closestIntermediateVector = allPoses[intermediateVectorIndex];
+
+  const previousPose = previousLatentVector ? allPoses[previousLatentVector] : [];
+  const nextPose = allPoses[nextLatentVector];
+
+  previousStrokeVectors.push(
+    nextLatentVector +
+      (range(0, additionalFrames * additionalFramesStep, additionalFramesStep).pop() as number),
+  );
+
+  // create an array of values between 0 and 1
+  const vals = tf.linspace(0, 1, frames / 2).arraySync();
+
+  return generateImagesFromVectors(poseDecoder, [
+    ...vals.map(value => slerp(previousPose, closestIntermediateVector, value)),
+    ...vals.map(value => slerp(closestIntermediateVector, nextPose, value)),
+    ...getAdditionalFrameVectors(
+      allPoses,
+      nextLatentVector,
+      additionalFrames,
+      additionalFramesStep,
+    ),
+  ]);
 }
