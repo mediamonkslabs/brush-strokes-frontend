@@ -244,13 +244,11 @@ export async function next(
     allCentroids[nextLatentVector],
   );
 
-  const numInterVals = Math.floor(distBetweenPoses / 10);
-
-  console.log(distBetweenPoses);
-
-  console.log(numInterVals);
+  const numInterVals = Math.min(Math.max(2, Math.floor(distBetweenPoses / 10)));
 
   const interimVals = tf.linspace(0, 1, numInterVals).arraySync();
+
+  // const interimVals = tf.linspace(0, 1, 10).arraySync();
 
   const allIntermLerpedCentroids = interimVals.map(value =>
     slerp(allCentroids[previousLatentVector], allCentroids[nextLatentVector], value),
@@ -259,22 +257,6 @@ export async function next(
   const allPosesToGenerate = allIntermLerpedCentroids.map(value =>
     getClosestPoseVector(allCentroids, value),
   );
-
-  console.log(allPosesToGenerate);
-
-  allPosesToGenerate.unshift(previousLatentVector);
-  allPosesToGenerate.push(nextLatentVector);
-
-  console.log(allPosesToGenerate);
-
-  const intermediateVector = slerp(
-    allCentroids[previousLatentVector],
-    allCentroids[nextLatentVector],
-    0.5,
-  );
-
-  const intermediateVectorIndex = getClosestPoseVector(allCentroids, intermediateVector);
-  const closestIntermediateVector = allPoses[intermediateVectorIndex];
 
   const previousPose = previousLatentVector ? allPoses[previousLatentVector] : [];
   const nextPose = allPoses[nextLatentVector];
@@ -291,13 +273,17 @@ export async function next(
     // ...vals.map(value => slerp(previousPose, closestIntermediateVector, value)),
     // ...vals.map(value => slerp(closestIntermediateVector, nextPose, value)),
 
-    ...allPosesToGenerate.reduce<Array<Array<number>>>(
-      (acc, value) => [
-        ...acc,
-        ...vals.map(lerpedVal => slerp(allPoses[value], allPoses[value + 1], lerpedVal)),
-      ],
-      [],
-    ),
+    ...allPosesToGenerate
+      .slice(0, -1)
+      .reduce<Array<Array<number>>>(
+        (acc, value, index) => [
+          ...acc,
+          ...vals.map(lerpedVal =>
+            slerp(allPoses[value], allPoses[allPosesToGenerate[index + 1]], lerpedVal),
+          ),
+        ],
+        [],
+      ),
 
     ...getAdditionalFrameVectors(
       allPoses,
