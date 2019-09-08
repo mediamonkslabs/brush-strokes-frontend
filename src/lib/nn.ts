@@ -1,6 +1,7 @@
 import * as tf from '@tensorflow/tfjs';
 import { range } from 'range';
 import { ZLayer } from './ZLayer';
+import Bezier from 'bezier-js';
 
 const CANVAS_WIDTH = 512;
 const CANVAS_HEIGHT = 256;
@@ -244,18 +245,35 @@ export async function next(
     allCentroids[nextLatentVector],
   );
 
-  const numInterVals = Math.min(Math.max(2, Math.floor(distBetweenPoses / 10)));
+  const numInterVals = Math.min(Math.max(Math.floor(distBetweenPoses / 10), 3), 12);
 
   const interimVals = tf.linspace(0, 1, numInterVals).arraySync();
 
-  // const interimVals = tf.linspace(0, 1, 10).arraySync();
+  const bezierTest = tf.linspace(0, 1, 3).arraySync();
 
-  const allIntermLerpedCentroids = interimVals.map(value =>
+  const bezierPoints = bezierTest.map(value =>
     slerp(allCentroids[previousLatentVector], allCentroids[nextLatentVector], value),
   );
 
+  const randomY = Math.floor((Math.random() * distBetweenPoses) / 2) - distBetweenPoses / 4;
+
+  const bezierCurve = new Bezier(
+    bezierPoints[0][0],
+    bezierPoints[0][1],
+    bezierPoints[1][0],
+    bezierPoints[1][1] + randomY,
+    bezierPoints[2][0],
+    bezierPoints[2][1],
+  );
+
+  // const allIntermLerpedCentroids = interimVals.map(value =>
+  //   slerp(allCentroids[previousLatentVector], allCentroids[nextLatentVector], value),
+  // );
+
+  const allIntermLerpedCentroids = bezierCurve.getLUT(numInterVals);
+
   const allPosesToGenerate = allIntermLerpedCentroids.map(value =>
-    getClosestPoseVector(allCentroids, value),
+    getClosestPoseVector(allCentroids, [value.x, value.y]),
   );
 
   const previousPose = previousLatentVector ? allPoses[previousLatentVector] : [];
@@ -266,20 +284,22 @@ export async function next(
       (range(0, additionalFrames * additionalFramesStep, additionalFramesStep).pop() as number),
   );
 
-  // create an array of values between 0 and 1
-  const vals = tf.linspace(0, 1, frames / 2).arraySync();
+  const framesPerPose = Math.min(Math.max(Math.floor(50 / numInterVals), 5), 8);
+
+  const vals = tf.linspace(0, 1, framesPerPose).arraySync();
 
   return generateImagesFromVectors(poseDecoder, [
-    // ...vals.map(value => slerp(previousPose, closestIntermediateVector, value)),
-    // ...vals.map(value => slerp(closestIntermediateVector, nextPose, value)),
-
     ...allPosesToGenerate
       .slice(0, -1)
       .reduce<Array<Array<number>>>(
         (acc, value, index) => [
           ...acc,
           ...vals.map(lerpedVal =>
-            slerp(allPoses[value], allPoses[allPosesToGenerate[index + 1]], lerpedVal),
+            slerp(
+              allPoses[allPosesToGenerate[index]],
+              allPoses[allPosesToGenerate[index + 1]],
+              lerpedVal,
+            ),
           ),
         ],
         [],

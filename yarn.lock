@@ -1348,6 +1348,11 @@
   dependencies:
     "@babel/types" "^7.3.0"
 
+"@types/bezier-js@0.0.8":
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/@types/bezier-js/-/bezier-js-0.0.8.tgz#e9dcdafa72ed4fe0decc72e35f8422fd402c269d"
+  integrity sha512-X+sQeRVDMwlQYZEqQcVOVqCKrZa7nKVuYirlJCJQRBpucQSzPGxjv7VAncCGe0cr1v1hFuLAzK11XzjOPqQ0kA==
+
 "@types/classnames@^2.2.9":
   version "2.2.9"
   resolved "https://registry.yarnpkg.com/@types/classnames/-/classnames-2.2.9.tgz#d868b6febb02666330410fe7f58f3c4b8258be7b"
@@ -2234,6 +2239,11 @@ bcrypt-pbkdf@^1.0.0:
   integrity sha1-pDAdOJtqQ/m2f/PKEaP2Y342Dp4=
   dependencies:
     tweetnacl "^0.14.3"
+
+bezier-js@^2.4.3:
+  version "2.4.3"
+  resolved "https://registry.yarnpkg.com/bezier-js/-/bezier-js-2.4.3.tgz#c11b899fdfb44a41d14c5d648eb8ee3ec48c79f1"
+  integrity sha512-qAz1iAGoSE+kk5guAMyvoUgfHq+e5JwK5jRHh2/tuk4XDRUuECrrHLouN27jAzjhlJD2vAsBHofCi5sOn1jcbQ==
 
 big.js@^5.2.2:
   version "5.2.2"
