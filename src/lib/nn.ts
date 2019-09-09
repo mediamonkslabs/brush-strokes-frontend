@@ -272,9 +272,12 @@ export async function next(
 
   const allIntermLerpedCentroids = bezierCurve.getLUT(numInterVals);
 
-  const allPosesToGenerate = allIntermLerpedCentroids.map(value =>
+  var allPosesToGenerate = allIntermLerpedCentroids.map(value =>
     getClosestPoseVector(allCentroids, [value.x, value.y]),
   );
+
+  allPosesToGenerate[0] = previousLatentVector;
+  allPosesToGenerate[allPosesToGenerate.length - 1] = nextLatentVector;
 
   const previousPose = previousLatentVector ? allPoses[previousLatentVector] : [];
   const nextPose = allPoses[nextLatentVector];
@@ -284,7 +287,7 @@ export async function next(
       (range(0, additionalFrames * additionalFramesStep, additionalFramesStep).pop() as number),
   );
 
-  const framesPerPose = Math.min(Math.max(Math.floor(50 / numInterVals), 5), 8);
+  const framesPerPose = Math.min(Math.max(Math.floor(50 / numInterVals), 4), 8);
 
   const vals = tf.linspace(0, 1, framesPerPose).arraySync();
 

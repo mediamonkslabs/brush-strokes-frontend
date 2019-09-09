@@ -40,7 +40,7 @@ export class CanvasAnimator extends EventDispatcher {
       this.dispatchEvent(
         new CanvasAnimatorEvent(CanvasAnimatorEvent.types.UPDATE, this.context.canvas),
       );
-    }, 12);
+    }, 15);
   }
 
   public drawImage(image: ImageData) {
