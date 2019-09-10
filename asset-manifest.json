@@ -1,0 +1,23 @@
+{
+  "files": {
+    "main.css": "/brush-strokes-frontend/static/css/main.e6fc8fbc.chunk.css",
+    "main.js": "/brush-strokes-frontend/static/js/main.133630ab.chunk.js",
+    "main.js.map": "/brush-strokes-frontend/static/js/main.133630ab.chunk.js.map",
+    "runtime~main.js": "/brush-strokes-frontend/static/js/runtime~main.cce3ccc8.js",
+    "runtime~main.js.map": "/brush-strokes-frontend/static/js/runtime~main.cce3ccc8.js.map",
+    "static/js/2.ff0085eb.chunk.js": "/brush-strokes-frontend/static/js/2.ff0085eb.chunk.js",
+    "static/js/2.ff0085eb.chunk.js.map": "/brush-strokes-frontend/static/js/2.ff0085eb.chunk.js.map",
+    "cf8cc01e8ebb5d36de98.worker.js": "/brush-strokes-frontend/cf8cc01e8ebb5d36de98.worker.js",
+    "cf8cc01e8ebb5d36de98.worker.js.map": "/brush-strokes-frontend/cf8cc01e8ebb5d36de98.worker.js.map",
+    "index.html": "/brush-strokes-frontend/index.html",
+    "precache-manifest.ad4332aa37d6c7bcbe01b35ba972e19b.js": "/brush-strokes-frontend/precache-manifest.ad4332aa37d6c7bcbe01b35ba972e19b.js",
+    "service-worker.js": "/brush-strokes-frontend/service-worker.js",
+    "static/css/main.e6fc8fbc.chunk.css.map": "/brush-strokes-frontend/static/css/main.e6fc8fbc.chunk.css.map",
+    "static/media/cursor.svg": "/brush-strokes-frontend/static/media/cursor.7b8e4782.svg",
+    "static/media/empty.jpg": "/brush-strokes-frontend/static/media/empty.f6d111fe.jpg",
+    "static/media/mute.svg": "/brush-strokes-frontend/static/media/mute.6ad13fb3.svg",
+    "static/media/shadertoyNoise.png": "/brush-strokes-frontend/static/media/shadertoyNoise.7c756fce.png",
+    "static/media/structure.jpg": "/brush-strokes-frontend/static/media/structure.41919d7b.jpg",
+    "static/media/unmute.svg": "/brush-strokes-frontend/static/media/unmute.56fd3ccf.svg"
+  }
+}
