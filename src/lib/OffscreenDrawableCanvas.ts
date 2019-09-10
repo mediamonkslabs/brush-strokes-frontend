@@ -51,7 +51,7 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
     const onPointerMove = this.onPointerMove.bind(this);
 
     this.targetEventContainer.addEventListener('pointerdown', onPointerDown);
-    this.targetEventContainer.addEventListener('pointerup', onPointerUp);
+    this.targetEventContainer.addEventListener('pointerout', onPointerUp);
     this.targetEventContainer.addEventListener('pointermove', onPointerMove);
   }
 
