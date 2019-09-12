@@ -179,18 +179,6 @@ async function generateImageFromVector(
   );
 }
 
-async function generateImagesFromVectors(
-  poseDecoder: tf.LayersModel,
-  vectors: Array<Array<number>>,
-): Promise<Array<ImageData>> {
-  return await Promise.all(
-    vectors.map(
-      async vector =>
-        await generateImageFromVector(poseDecoder, vector, CANVAS_WIDTH, CANVAS_HEIGHT),
-    ),
-  );
-}
-
 async function getLatentVector(
   strokeEncoder: tf.LayersModel,
   allStrokes: Array<Array<number>>,
@@ -209,7 +197,7 @@ function getAdditionalFrameVectors(
   return range(0, frameCount * frameStep, frameStep).map(n => allPoses[latentVector + n]);
 }
 
-export async function next(
+export async function* next(
   data: {
     poseDecoder: tf.LayersModel;
     strokeEncoder: tf.LayersModel;
@@ -223,7 +211,55 @@ export async function next(
   frames: number,
   additionalFrames: number,
   additionalFramesStep: number,
-): Promise<Array<ImageData>> {
+): AsyncIterable<ImageData> {
+  const vectors = await getNextVectors(
+    data,
+    previousStrokeVectors,
+    next,
+    frames,
+    additionalFrames,
+    additionalFramesStep,
+  );
+
+  while (vectors.length) {
+    const vec = vectors.shift();
+
+    if (vec === undefined) {
+      break;
+    }
+    const image = await generateImageFromVector(data.poseDecoder, vec, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    yield image;
+  }
+
+  // return generateImagesFromVectors(
+  //   data.poseDecoder,
+  //   await getNextVectors(
+  //     data,
+  //     previousStrokeVectors,
+  //     next,
+  //     frames,
+  //     additionalFrames,
+  //     additionalFramesStep,
+  //   ),
+  // );
+}
+
+export async function getNextVectors(
+  data: {
+    poseDecoder: tf.LayersModel;
+    strokeEncoder: tf.LayersModel;
+    allPoses: Array<Array<number>>;
+    allStrokes: Array<Array<number>>;
+    allCentroids: Array<Array<number>>;
+    poseEncoder: tf.LayersModel;
+  },
+  previousStrokeVectors: Array<number>,
+  next: ImageData,
+  frames: number,
+  additionalFrames: number,
+  additionalFramesStep: number,
+): Promise<Array<Array<number>>> {
   const { poseDecoder, strokeEncoder, allPoses, allStrokes, allCentroids } = data;
   const previousLatentVector = previousStrokeVectors[previousStrokeVectors.length - 1];
   const nextLatentVector = await getLatentVector(strokeEncoder, allStrokes, next);
@@ -234,9 +270,11 @@ export async function next(
         (range(0, additionalFrames * additionalFramesStep, additionalFramesStep).pop() as number),
     );
 
-    return generateImagesFromVectors(
-      poseDecoder,
-      getAdditionalFrameVectors(allPoses, nextLatentVector, additionalFrames, additionalFramesStep),
+    return getAdditionalFrameVectors(
+      allPoses,
+      nextLatentVector,
+      additionalFrames,
+      additionalFramesStep,
     );
   }
 
@@ -291,7 +329,7 @@ export async function next(
 
   const vals = tf.linspace(0, 1, framesPerPose).arraySync();
 
-  return generateImagesFromVectors(poseDecoder, [
+  return [
     ...allPosesToGenerate
       .slice(0, -1)
       .reduce<Array<Array<number>>>(
@@ -314,5 +352,5 @@ export async function next(
       additionalFrames,
       additionalFramesStep,
     ),
-  ]);
+  ];
 }

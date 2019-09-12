@@ -22,6 +22,17 @@ interface Props {
   height: number;
 }
 
+interface NextEventEnd {
+  type: 'END';
+}
+
+interface NextEventData {
+  type: 'DATA';
+  data: ImageData;
+}
+
+type NextEvent = NextEventData | NextEventEnd;
+
 const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
   const [canvasAnimator, setCanvasAnimator] = useState<CanvasAnimator | null>(null);
   const [drawableCanvas, setDrawableCanvas] = useState<OffscreenDrawableCanvas | null>(null);
@@ -31,6 +42,7 @@ const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
   const canvasFitContainerRef = createRef<HTMLDivElement>();
   const [appWorker, setAppWorker] = useState<{
     next: Next;
+    worker: Worker;
   } | null>(null);
   const folder = useDatGuiFolder('Neural net', false);
 
@@ -124,20 +136,29 @@ const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
     ) {
       const finish = async ({ data }: OffscreenDrawableCanvasEvent) => {
         setIsProcessing(true);
-        const nextFrames = await appWorker.next(
-          data,
-          frames,
-          additionalFrames,
-          additionalFramesStep,
-        );
+        const nextFrames: Array<ImageData> = [];
 
-        // clear drawing image in WebGL
-        waterColorEffect.updateInputCanvas(
-          createCanvasFromImageData(drawableCanvas.getCurrentImage()).canvas,
-        );
-        canvasAnimator.addFrames(nextFrames);
-        canvasAnimator.animate();
-        setIsProcessing(false);
+        const listener = (event: MessageEvent) => {
+          const data: NextEvent = event.data;
+
+          if (data.type === 'END') {
+            appWorker.worker.removeEventListener('message', listener);
+
+            // clear drawing image in WebGL
+            waterColorEffect.updateInputCanvas(
+              createCanvasFromImageData(drawableCanvas.getCurrentImage()).canvas,
+            );
+            canvasAnimator.addFrames(nextFrames);
+            canvasAnimator.animate();
+            setIsProcessing(false);
+          } else if (data.type === 'DATA') {
+            nextFrames.push(data.data);
+          }
+        };
+
+        appWorker.worker.addEventListener('message', listener);
+
+        appWorker.next(data, frames, additionalFrames, additionalFramesStep);
       };
       drawableCanvas.addEventListener(OffscreenDrawableCanvasEvent.types.DRAW_COMPLETE, finish);
       return () => {
@@ -190,7 +211,7 @@ const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
         await worker.ready;
         await worker.load();
         worker.removeEventListener('message', listener);
-        setAppWorker({ next: worker.next });
+        setAppWorker({ worker, next: worker.next });
         waterColorEffect.loadState = false;
       }
     })();
