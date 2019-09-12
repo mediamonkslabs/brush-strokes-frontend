@@ -231,18 +231,6 @@ export async function* next(
 
     yield image;
   }
-
-  // return generateImagesFromVectors(
-  //   data.poseDecoder,
-  //   await getNextVectors(
-  //     data,
-  //     previousStrokeVectors,
-  //     next,
-  //     frames,
-  //     additionalFrames,
-  //     additionalFramesStep,
-  //   ),
-  // );
 }
 
 export async function getNextVectors(
