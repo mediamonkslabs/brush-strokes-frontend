@@ -1,10 +1,6 @@
 import '../lib/tensorflowjs-worker-workaround';
 import { loadModels, next as _next } from '../lib/nn';
 
-function wait(time) {
-  return new Promise(resolve => setTimeout(resolve, time));
-}
-
 let data = undefined;
 
 export async function load() {
@@ -35,13 +31,13 @@ export const next = (previousStrokeVectors =>
 
     while (true) {
       const res = await iterable.next();
+      if (res.done === true) {
+        break;
+      }
       postMessage({
         type: 'DATA',
         data: res.value,
       });
-      if (res.done === true) {
-        break;
-      }
     }
 
     postMessage({
