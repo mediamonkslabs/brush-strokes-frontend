@@ -1,4 +1,4 @@
-import { createCanvas, get2DContext, scaleImage } from './canvas';
+import { createCanvas } from './canvas';
 import EventDispatcher, { createEventClass } from 'seng-event';
 
 interface Point {
