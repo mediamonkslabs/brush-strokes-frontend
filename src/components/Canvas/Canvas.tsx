@@ -114,9 +114,9 @@ const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
   useEffect(() => {
     if (drawableCanvas !== null && appWorker !== null && canvasAnimator !== null) {
       const draw = ({ data }: OffscreenDrawableCanvasEvent) => {
-        debugDrawImageData(data);
+        // debugDrawImageData(data);
         if (waterColorEffect !== null) {
-          waterColorEffect.updateInputCanvas(createCanvasFromImageData(data).canvas);
+          waterColorEffect.updateInputCanvas(data.canvas);
         }
       };
       drawableCanvas.addEventListener(OffscreenDrawableCanvasEvent.types.DRAW, draw);
@@ -145,9 +145,7 @@ const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
             appWorker.worker.removeEventListener('message', listener);
 
             // clear drawing image in WebGL
-            waterColorEffect.updateInputCanvas(
-              createCanvasFromImageData(drawableCanvas.getCurrentImage()).canvas,
-            );
+            waterColorEffect.updateInputCanvas(drawableCanvas.getCurrentImage().canvas);
             canvasAnimator.addFrames(nextFrames);
             canvasAnimator.animate();
             setIsProcessing(false);
@@ -158,7 +156,12 @@ const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
 
         appWorker.worker.addEventListener('message', listener);
 
-        appWorker.next(data, frames, additionalFrames, additionalFramesStep);
+        appWorker.next(
+          data.getImageData(0, 0, data.canvas.width, data.canvas.height),
+          frames,
+          additionalFrames,
+          additionalFramesStep,
+        );
       };
       drawableCanvas.addEventListener(OffscreenDrawableCanvasEvent.types.DRAW_COMPLETE, finish);
       return () => {
