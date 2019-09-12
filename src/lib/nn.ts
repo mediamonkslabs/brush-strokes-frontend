@@ -281,20 +281,22 @@ export async function getNextVectors(
     slerp(allCentroids[previousLatentVector], allCentroids[nextLatentVector], value),
   );
 
-  const randomY = Math.floor((Math.random() * distBetweenPoses) / 2) - distBetweenPoses / 4;
+  const randomX1 = Math.floor(Math.random() * distBetweenPoses) - distBetweenPoses / 2;
+  const randomY1 = Math.floor(Math.random() * distBetweenPoses) - distBetweenPoses / 2;
+
+  const randomX2 = Math.floor(Math.random() * distBetweenPoses) - distBetweenPoses / 2;
+  const randomY2 = Math.floor(Math.random() * distBetweenPoses) - distBetweenPoses / 2;
 
   const bezierCurve = new Bezier(
     bezierPoints[0][0],
     bezierPoints[0][1],
-    bezierPoints[1][0],
-    bezierPoints[1][1] + randomY,
+    bezierPoints[0][0] + randomX1,
+    bezierPoints[0][1] + randomY1,
+    bezierPoints[2][0] + randomX2,
+    bezierPoints[2][1] + randomY2,
     bezierPoints[2][0],
     bezierPoints[2][1],
   );
-
-  // const allIntermLerpedCentroids = interimVals.map(value =>
-  //   slerp(allCentroids[previousLatentVector], allCentroids[nextLatentVector], value),
-  // );
 
   const allIntermLerpedCentroids = bezierCurve.getLUT(numInterVals);
 
