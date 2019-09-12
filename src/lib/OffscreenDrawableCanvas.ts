@@ -1,4 +1,4 @@
-import { get2DContext, scaleImage } from './canvas';
+import { createCanvas } from './canvas';
 import EventDispatcher, { createEventClass } from 'seng-event';
 
 interface Point {
@@ -6,7 +6,7 @@ interface Point {
   y: number;
 }
 
-export class OffscreenDrawableCanvasEvent extends createEventClass<ImageData>()(
+export class OffscreenDrawableCanvasEvent extends createEventClass<CanvasRenderingContext2D>()(
   'DRAW',
   'DRAW_COMPLETE',
 ) {}
@@ -14,7 +14,7 @@ export class OffscreenDrawableCanvasEvent extends createEventClass<ImageData>()(
 export class OffscreenDrawableCanvas extends EventDispatcher {
   private isPointerDown = false;
 
-  private context: OffscreenCanvasRenderingContext2D;
+  private context: CanvasRenderingContext2D;
   private pointerId: number | undefined;
 
   public brushSize: number = 5;
@@ -36,9 +36,7 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
   ) {
     super();
 
-    this.context = get2DContext(
-      new OffscreenCanvas(canvasWidth * devicePixelRatio, canvasHeight * devicePixelRatio),
-    );
+    this.context = createCanvas(canvasWidth * devicePixelRatio, canvasHeight * devicePixelRatio);
 
     this.clear();
 
@@ -51,6 +49,7 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
     const onPointerMove = this.onPointerMove.bind(this);
 
     this.targetEventContainer.addEventListener('pointerdown', onPointerDown);
+    this.targetEventContainer.addEventListener('pointerout', onPointerUp);
     this.targetEventContainer.addEventListener('pointerup', onPointerUp);
     this.targetEventContainer.addEventListener('pointermove', onPointerMove);
   }
@@ -87,12 +86,8 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
     this.clear();
   }
 
-  public getCurrentImage() {
-    return scaleImage(
-      this.context.getImageData(0, 0, this.context.canvas.width, this.context.canvas.height),
-      this.context.canvas.width / devicePixelRatio,
-      this.context.canvas.height / devicePixelRatio,
-    );
+  public getCurrentImage(): CanvasRenderingContext2D {
+    return this.context;
   }
 
   private onPointerMove(event: PointerEvent) {
@@ -128,11 +123,7 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
     this.dispatchEvent(
       new OffscreenDrawableCanvasEvent(
         OffscreenDrawableCanvasEvent.types.DRAW,
-        scaleImage(
-          this.context.getImageData(0, 0, this.context.canvas.width, this.context.canvas.height),
-          this.context.canvas.width / devicePixelRatio,
-          this.context.canvas.height / devicePixelRatio,
-        ),
+        this.getCurrentImage(),
       ),
     );
 

@@ -6,7 +6,7 @@ import {
 } from '../../lib/OffscreenDrawableCanvas';
 import { useDatGuiFolder, useDatGuiValue } from '../../lib/dat-gui';
 import WatercolorEffect from '../../lib/watercolor-effect';
-import { createCanvasFromImageData, debugDrawImageData, get2DContext } from '../../lib/canvas';
+import { debugDrawImageData, get2DContext } from '../../lib/canvas';
 import Worker from '../../workers/nn.worker';
 import styles from './Canvas.module.css';
 import Loader from '../Loader';
@@ -22,6 +22,17 @@ interface Props {
   height: number;
 }
 
+interface NextEventEnd {
+  type: 'END';
+}
+
+interface NextEventData {
+  type: 'DATA';
+  data: ImageData;
+}
+
+type NextEvent = NextEventData | NextEventEnd;
+
 const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
   const [canvasAnimator, setCanvasAnimator] = useState<CanvasAnimator | null>(null);
   const [drawableCanvas, setDrawableCanvas] = useState<OffscreenDrawableCanvas | null>(null);
@@ -31,6 +42,7 @@ const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
   const canvasFitContainerRef = createRef<HTMLDivElement>();
   const [appWorker, setAppWorker] = useState<{
     next: Next;
+    worker: Worker;
   } | null>(null);
   const folder = useDatGuiFolder('Neural net', false);
 
@@ -102,9 +114,9 @@ const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
   useEffect(() => {
     if (drawableCanvas !== null && appWorker !== null && canvasAnimator !== null) {
       const draw = ({ data }: OffscreenDrawableCanvasEvent) => {
-        debugDrawImageData(data);
+        // debugDrawImageData(data);
         if (waterColorEffect !== null) {
-          waterColorEffect.updateInputCanvas(createCanvasFromImageData(data).canvas);
+          waterColorEffect.updateInputCanvas(data.canvas);
         }
       };
       drawableCanvas.addEventListener(OffscreenDrawableCanvasEvent.types.DRAW, draw);
@@ -124,20 +136,32 @@ const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
     ) {
       const finish = async ({ data }: OffscreenDrawableCanvasEvent) => {
         setIsProcessing(true);
-        const nextFrames = await appWorker.next(
-          data,
+        const nextFrames: Array<ImageData> = [];
+
+        const listener = (event: MessageEvent) => {
+          const data: NextEvent = event.data;
+
+          if (data.type === 'END') {
+            appWorker.worker.removeEventListener('message', listener);
+
+            // clear drawing image in WebGL
+            waterColorEffect.updateInputCanvas(drawableCanvas.getCurrentImage().canvas);
+            canvasAnimator.addFrames(nextFrames);
+            canvasAnimator.animate();
+            setIsProcessing(false);
+          } else if (data.type === 'DATA') {
+            nextFrames.push(data.data);
+          }
+        };
+
+        appWorker.worker.addEventListener('message', listener);
+
+        appWorker.next(
+          data.getImageData(0, 0, data.canvas.width, data.canvas.height),
           frames,
           additionalFrames,
           additionalFramesStep,
         );
-
-        // clear drawing image in WebGL
-        waterColorEffect.updateInputCanvas(
-          createCanvasFromImageData(drawableCanvas.getCurrentImage()).canvas,
-        );
-        canvasAnimator.addFrames(nextFrames);
-        canvasAnimator.animate();
-        setIsProcessing(false);
       };
       drawableCanvas.addEventListener(OffscreenDrawableCanvasEvent.types.DRAW_COMPLETE, finish);
       return () => {
@@ -190,7 +214,7 @@ const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
         await worker.ready;
         await worker.load();
         worker.removeEventListener('message', listener);
-        setAppWorker({ next: worker.next });
+        setAppWorker({ worker, next: worker.next });
         waterColorEffect.loadState = false;
       }
     })();
