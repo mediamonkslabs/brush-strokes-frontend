@@ -6,7 +6,7 @@ import {
 } from '../../lib/OffscreenDrawableCanvas';
 import { useDatGuiFolder, useDatGuiValue } from '../../lib/dat-gui';
 import WatercolorEffect from '../../lib/watercolor-effect';
-import { createCanvasFromImageData, debugDrawImageData, get2DContext } from '../../lib/canvas';
+import { debugDrawImageData, get2DContext } from '../../lib/canvas';
 import Worker from '../../workers/nn.worker';
 import styles from './Canvas.module.css';
 import Loader from '../Loader';
