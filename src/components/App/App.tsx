@@ -6,11 +6,12 @@ import styles from './App.module.css';
 import mute from '../../images/icons/mute.svg';
 import unmute from '../../images/icons/unmute.svg';
 import CustomCursor from '../CustomCursor';
-import cursorImage from '../../images/cursor.svg';
 
 const App = () => {
   const [muted, setMuted] = useState<boolean>(false);
   const toggleMute = useCallback(() => setMuted(!muted), [muted]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [processingProgress, setProcessingProgress] = useState<number>(0);
 
   const { ref: containerRef, width, height, x, y } = useElementFit(
     CANVAS_WIDTH + CANVAS_GUTTER * 2,
@@ -18,6 +19,19 @@ const App = () => {
     CANVAS_HEIGHT + CANVAS_GUTTER * 2,
     ScaleMode.CONTAIN,
   );
+
+  const onProcessingStateChange = useCallback((isProcessing: boolean) => {
+    setIsLoading(isProcessing);
+    setProcessingProgress(0);
+  }, []);
+
+  const onProcessingProgressChange = useCallback(progress => {
+    setProcessingProgress(progress);
+  }, []);
+
+  const onLoadingStateChange = useCallback((isLoading: boolean) => {
+    setIsLoading(isLoading);
+  }, []);
 
   return (
     <div ref={containerRef as RefObject<HTMLDivElement>} className={styles.root}>
@@ -48,8 +62,19 @@ const App = () => {
             </a>
           </div>
         </div>
-        <CustomCursor cursorImage={cursorImage} cursorOffsetX={0} cursorOffsetY={-35}>
-          <Canvas width={width - CANVAS_GUTTER * 2} height={height - CANVAS_GUTTER * 2} />
+        <CustomCursor
+          cursorOffsetX={-30}
+          cursorOffsetY={-70}
+          isLoading={isLoading}
+          loadingProgress={processingProgress}
+        >
+          <Canvas
+            width={width - CANVAS_GUTTER * 2}
+            height={height - CANVAS_GUTTER * 2}
+            onInitLoadingStateChange={onLoadingStateChange}
+            onProcessingStateChange={onProcessingStateChange}
+            onProcessingProgressChange={onProcessingProgressChange}
+          />
         </CustomCursor>
       </div>
     </div>

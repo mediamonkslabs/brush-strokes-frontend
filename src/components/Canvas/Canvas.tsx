@@ -10,8 +10,6 @@ import { debugDrawImageData, get2DContext } from '../../lib/canvas';
 import Worker from '../../workers/nn.worker';
 import styles from './Canvas.module.css';
 import Loader from '../Loader';
-import spinner from '../../images/spinner.png';
-import classNames from 'classnames';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../settings';
 
 type WorkerReturnType = ReturnType<typeof Worker>;
@@ -20,10 +18,18 @@ type Next = WorkerReturnType['next'];
 interface Props {
   width: number;
   height: number;
+  onInitLoadingStateChange: (loading: boolean) => unknown;
+  onProcessingStateChange: (processing: boolean) => unknown;
+  onProcessingProgressChange: (progress: number) => unknown;
 }
 
 interface NextEventEnd {
   type: 'END';
+}
+
+interface NextEventInit {
+  type: 'INIT';
+  data: number;
 }
 
 interface NextEventData {
@@ -31,13 +37,18 @@ interface NextEventData {
   data: ImageData;
 }
 
-type NextEvent = NextEventData | NextEventEnd;
+type NextEvent = NextEventData | NextEventEnd | NextEventInit;
 
-const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
+const Canvas = ({
+  width: canvasWidth,
+  height: canvasHeight,
+  onInitLoadingStateChange,
+  onProcessingStateChange,
+  onProcessingProgressChange,
+}: Props) => {
   const [canvasAnimator, setCanvasAnimator] = useState<CanvasAnimator | null>(null);
   const [drawableCanvas, setDrawableCanvas] = useState<OffscreenDrawableCanvas | null>(null);
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   const canvasFitContainerRef = createRef<HTMLDivElement>();
   const [appWorker, setAppWorker] = useState<{
@@ -135,22 +146,26 @@ const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
       waterColorEffect !== null
     ) {
       const finish = async ({ data }: OffscreenDrawableCanvasEvent) => {
-        setIsProcessing(true);
+        onProcessingStateChange(true);
         const nextFrames: Array<ImageData> = [];
+        let total = 0;
 
         const listener = (event: MessageEvent) => {
           const data: NextEvent = event.data;
 
-          if (data.type === 'END') {
+          if (data.type === 'INIT') {
+            total = data.data;
+          } else if (data.type === 'END') {
             appWorker.worker.removeEventListener('message', listener);
 
             // clear drawing image in WebGL
             waterColorEffect.updateInputCanvas(drawableCanvas.getCurrentImage().canvas);
             canvasAnimator.addFrames(nextFrames);
             canvasAnimator.animate();
-            setIsProcessing(false);
+            onProcessingStateChange(false);
           } else if (data.type === 'DATA') {
             nextFrames.push(data.data);
+            onProcessingProgressChange(nextFrames.length / total);
           }
         };
 
@@ -172,6 +187,8 @@ const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
       };
     }
   }, [
+    onProcessingProgressChange,
+    onProcessingStateChange,
     drawableCanvas,
     appWorker,
     waterColorEffect,
@@ -200,6 +217,7 @@ const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
   useEffect(() => {
     (async () => {
       if (appWorker === null && waterColorEffect !== null && !waterColorEffect.loadState) {
+        onInitLoadingStateChange(true);
         waterColorEffect.loadState = true;
         const worker: any = Worker();
 
@@ -216,9 +234,10 @@ const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
         worker.removeEventListener('message', listener);
         setAppWorker({ worker, next: worker.next });
         waterColorEffect.loadState = false;
+        onInitLoadingStateChange(false);
       }
     })();
-  }, [appWorker, waterColorEffect]);
+  }, [appWorker, waterColorEffect, onInitLoadingStateChange]);
 
   return (
     <div>
@@ -231,13 +250,6 @@ const Canvas = ({ width: canvasWidth, height: canvasHeight }: Props) => {
         }}
       >
         <Loader progress={loadingProgress} />
-        <img
-          alt={''}
-          src={spinner}
-          className={classNames(styles.spinner, {
-            [styles.spinnerVisible]: isProcessing,
-          })}
-        />
       </div>
     </div>
   );

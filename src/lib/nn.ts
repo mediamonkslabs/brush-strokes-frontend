@@ -211,7 +211,7 @@ export async function* next(
   frames: number,
   additionalFrames: number,
   additionalFramesStep: number,
-): AsyncIterable<ImageData> {
+): AsyncIterable<ImageData | number> {
   const vectors = await getNextVectors(
     data,
     previousStrokeVectors,
@@ -220,6 +220,8 @@ export async function* next(
     additionalFrames,
     additionalFramesStep,
   );
+
+  yield vectors.length;
 
   while (vectors.length) {
     const vec = vectors.shift();
