@@ -29,6 +29,11 @@ export const next = (previousStrokeVectors =>
       additionalFramesStep,
     );
 
+    postMessage({
+      type: 'INIT',
+      data: (await iterable.next()).value,
+    });
+
     while (true) {
       const res = await iterable.next();
       if (res.done === true) {
