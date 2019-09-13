@@ -21,6 +21,8 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
   public blur: number = 5;
   public maxStrokeLength = 250;
 
+  public disabled: boolean = false;
+
   private currentStrokeLength: number = 0;
   private previousPointerPosition: Point = {
     x: -1,
@@ -55,7 +57,7 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
   }
 
   private onPointerDown(event: PointerEvent) {
-    if (this.isPointerDown === true) {
+    if (this.isPointerDown === true || this.disabled === true) {
       return;
     }
     event.preventDefault();
@@ -68,7 +70,11 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
   }
 
   private onPointerUp(event: PointerEvent) {
-    if (this.isPointerDown === false || this.pointerId !== event.pointerId) {
+    if (
+      this.isPointerDown === false ||
+      this.pointerId !== event.pointerId ||
+      this.disabled === true
+    ) {
       return;
     }
 
@@ -91,7 +97,11 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
   }
 
   private onPointerMove(event: PointerEvent) {
-    if (this.isPointerDown === false || this.pointerId !== event.pointerId) {
+    if (
+      this.isPointerDown === false ||
+      this.pointerId !== event.pointerId ||
+      this.disabled === true
+    ) {
       return;
     }
     event.preventDefault();
