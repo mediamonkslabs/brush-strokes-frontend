@@ -163,6 +163,7 @@ const Canvas = ({
             canvasAnimator.addFrames(nextFrames);
             canvasAnimator.animate();
             onProcessingStateChange(false);
+            drawableCanvas.disabled = false;
           } else if (data.type === 'DATA') {
             nextFrames.push(data.data);
             onProcessingProgressChange(nextFrames.length / total);
@@ -171,6 +172,7 @@ const Canvas = ({
 
         appWorker.worker.addEventListener('message', listener);
 
+        drawableCanvas.disabled = true;
         appWorker.next(
           data.getImageData(0, 0, data.canvas.width, data.canvas.height),
           frames,
