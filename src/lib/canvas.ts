@@ -66,7 +66,7 @@ export const debugDrawImageData = (() => {
   offscreenCanvas.style.setProperty('left', '0');
   offscreenCanvas.style.setProperty('pointer-events', 'none');
 
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.REACT_APP_HIDE_DAT_GUI === undefined) {
     document.body.appendChild(offscreenCanvas);
   }
 

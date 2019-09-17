@@ -3,13 +3,40 @@
   cursor: none;
 }
 
+.spinner {
+  position: absolute;
+  z-index: 99999;
+  pointer-events: none;
+  visibility: hidden;
+  bottom: 30px;
+  right: 30px;
+}
+
+.spinnerVisible {
+  visibility: visible;
+}
+
 .cursor {
   position: absolute;
-  display: none;
+  visibility: hidden;
   z-index: 99999;
   pointer-events: none;
 }
 
 .cursorVisible {
-  display: block;
+  visibility: visible;
+}
+
+@keyframes cursor-outline {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+
+.cursorOutline {
+  transform-origin: 50% 50%;
+  animation: cursor-outline 20s linear infinite;
 }
