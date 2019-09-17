@@ -7,27 +7,24 @@
   position: absolute;
   z-index: 99999;
   pointer-events: none;
-  display: none;
-}
-
-.spinnerTouch {
+  visibility: hidden;
   bottom: 30px;
   right: 30px;
 }
 
 .spinnerVisible {
-  display: block;
+  visibility: visible;
 }
 
 .cursor {
   position: absolute;
-  display: none;
+  visibility: hidden;
   z-index: 99999;
   pointer-events: none;
 }
 
 .cursorVisible {
-  display: block;
+  visibility: visible;
 }
 
 @keyframes cursor-outline {

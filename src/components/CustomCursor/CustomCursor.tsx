@@ -23,6 +23,8 @@ const CustomCursor = ({
   loadingProgress,
 }: Props) => {
   const rootRef = createRef<HTMLDivElement>();
+  const cursorRef = createRef<SVGSVGElement>();
+  const spinnerRef = createRef<SVGSVGElement>();
 
   const outlineRef = createRef<SVGCircleElement>();
   const progressRef = createRef<SVGCircleElement>();
@@ -30,14 +32,10 @@ const CustomCursor = ({
   const [outlineLerp, setOutlineLerp] = useState<ReturnType<typeof startLerp> | null>(null);
   const [progressLerp, setProgressLerp] = useState<ReturnType<typeof startLerp> | null>(null);
 
-  const cursorRef = createRef<SVGSVGElement>();
-  const spinnerRef = createRef<SVGSVGElement>();
   const [isPointerVisible, setPointerVisible] = useState<boolean>(false);
-  const [isTouch, setIsTouch] = useState<boolean>(false);
 
   const pointerMoveCallback = useCallback(
     (event: PointerEvent) => {
-      setIsTouch(event.pointerType === 'touch');
       if (cursorRef.current !== null) {
         cursorRef.current.style.setProperty('left', `${event.offsetX + cursorOffsetX}px`);
         cursorRef.current.style.setProperty('top', `${event.offsetY + cursorOffsetY}px`);
@@ -52,24 +50,22 @@ const CustomCursor = ({
         }
       }
     },
-    [cursorRef, cursorOffsetX, cursorOffsetY, spinnerRef, isTouch],
+    [cursorRef, cursorOffsetX, cursorOffsetY, spinnerRef],
   );
 
   const pointerLeaveCallback = useCallback(
     (event: PointerEvent) => {
-      setIsTouch(event.pointerType === 'touch');
-      setPointerVisible(false);
       if (spinnerRef.current !== null) {
         spinnerRef.current.style.removeProperty('left');
         spinnerRef.current.style.removeProperty('top');
       }
+      setPointerVisible(false);
     },
     [spinnerRef],
   );
 
   const pointerEnterCallback = useCallback(
     (event: PointerEvent) => {
-      setIsTouch(event.pointerType === 'touch');
       if (event.pointerType === 'touch' && spinnerRef.current !== null) {
         spinnerRef.current.style.removeProperty('left');
         spinnerRef.current.style.removeProperty('top');
@@ -130,11 +126,20 @@ const CustomCursor = ({
   }, [setOutlineRadius, outlineLerp]);
 
   useEffect(() => {
-    if (rootRef.current !== null) {
-      rootRef.current.addEventListener('pointermove', pointerMoveCallback);
-      rootRef.current.addEventListener('pointerleave', pointerLeaveCallback);
-      rootRef.current.addEventListener('pointerenter', pointerEnterCallback);
+    const root = rootRef.current;
+    if (root !== null) {
+      root.addEventListener('pointermove', pointerMoveCallback);
+      root.addEventListener('pointerleave', pointerLeaveCallback);
+      root.addEventListener('pointerenter', pointerEnterCallback);
     }
+
+    return () => {
+      if (root !== null) {
+        root.removeEventListener('pointermove', pointerMoveCallback);
+        root.removeEventListener('pointerleave', pointerLeaveCallback);
+        root.removeEventListener('pointerenter', pointerEnterCallback);
+      }
+    };
   }, [rootRef, pointerMoveCallback, pointerLeaveCallback, pointerEnterCallback]);
 
   return (
@@ -157,6 +162,7 @@ const CustomCursor = ({
           strokeWidth=".956"
         />
       </svg>
+
       <svg
         width="100"
         height="100"
@@ -165,8 +171,7 @@ const CustomCursor = ({
         xmlns="http://www.w3.org/2000/svg"
         ref={spinnerRef}
         className={classNames(styles.spinner, {
-          [styles.spinnerTouch]: isTouch,
-          [styles.spinnerVisible]: isTouch || isPointerVisible,
+          [styles.spinnerVisible]: true,
         })}
       >
         <circle
