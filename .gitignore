@@ -24,3 +24,4 @@ yarn-error.log*
 .idea
 .stylelintcache
 .eslintcache
+package-lock.json
