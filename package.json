@@ -42,7 +42,7 @@
   },
   "scripts": {
     "start": "react-app-rewired start",
-    "build": "cross-env REACT_APP_HIDE_DAT_GUI=1 react-app-rewired build",
+    "build": "cross-env REACT_APP_HIDE_DAT_GUI=1 REACT_APP_HIDE_CANVAS_DEBUG=1 react-app-rewired build",
     "test": "react-app-rewired test",
     "eject": "react-app-rewired eject",
     "lint": "npm-run-all lint:*",
