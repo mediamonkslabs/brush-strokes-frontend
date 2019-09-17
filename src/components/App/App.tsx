@@ -1,15 +1,11 @@
-import React, { RefObject, useCallback, useState } from 'react';
+import React, { RefObject, useCallback, useEffect, useState } from 'react';
 import Canvas from '../Canvas';
 import { ScaleMode, useElementFit } from 'use-element-fit';
 import { CANVAS_GUTTER, CANVAS_HEIGHT, CANVAS_WIDTH } from '../../settings';
 import styles from './App.module.css';
-import mute from '../../images/icons/mute.svg';
-import unmute from '../../images/icons/unmute.svg';
 import CustomCursor from '../CustomCursor';
 
 const App = () => {
-  const [muted, setMuted] = useState<boolean>(false);
-  const toggleMute = useCallback(() => setMuted(!muted), [muted]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [processingProgress, setProcessingProgress] = useState<number>(0);
 
@@ -19,6 +15,14 @@ const App = () => {
     CANVAS_HEIGHT + CANVAS_GUTTER * 2,
     ScaleMode.CONTAIN,
   );
+
+  useEffect(() => {
+    if (containerRef.current !== null) {
+      containerRef.current.requestFullscreen({
+        navigationUI: 'hide',
+      });
+    }
+  }, [containerRef]);
 
   const onProcessingStateChange = useCallback((isProcessing: boolean) => {
     setIsLoading(isProcessing);
