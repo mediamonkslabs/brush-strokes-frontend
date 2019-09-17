@@ -8,45 +8,6 @@
 
 .app {
   position: absolute;
-  padding: 0 60px;
+  padding: 60px 60px;
   box-sizing: border-box;
-}
-
-.header {
-  height: 60px;
-  display: flex;
-  align-items: center;
-  flex-wrap: nowrap;
-}
-
-.headerMenu {
-  flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.headerButton {
-  font-family: 'Roboto Mono', sans-serif;
-  font-size: 15px;
-  cursor: pointer;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  color: #666;
-  text-transform: uppercase;
-  margin: 0 15px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  text-decoration: none;
-}
-
-.headerButton:first-child {
-  margin-left: 0;
-}
-
-.headerButton:last-child {
-  margin-right: 0;
 }
