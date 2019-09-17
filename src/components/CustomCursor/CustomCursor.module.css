@@ -3,6 +3,22 @@
   cursor: none;
 }
 
+.spinner {
+  position: absolute;
+  z-index: 99999;
+  pointer-events: none;
+  display: none;
+}
+
+.spinnerTouch {
+  bottom: 30px;
+  right: 30px;
+}
+
+.spinnerVisible {
+  display: block;
+}
+
 .cursor {
   position: absolute;
   display: none;
