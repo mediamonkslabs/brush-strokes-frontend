@@ -44,24 +44,6 @@ const App = () => {
           left: `${x}px`,
         }}
       >
-        <div className={styles.header}>
-          <button onClick={toggleMute} className={styles.headerButton}>
-            {muted && <img src={unmute} alt={'unmute'} />}
-            {!muted && <img src={mute} alt={'mute'} />}
-          </button>
-
-          <div className={styles.headerMenu}>
-            <button className={styles.headerButton}>Share</button>
-            <button className={styles.headerButton}>About</button>
-            <a
-              href={'https://github.com/mediamonkslabs/brush-strokes-frontend'}
-              target={'_blank'}
-              className={styles.headerButton}
-            >
-              Source
-            </a>
-          </div>
-        </div>
         <CustomCursor
           cursorOffsetX={-30}
           cursorOffsetY={-70}
