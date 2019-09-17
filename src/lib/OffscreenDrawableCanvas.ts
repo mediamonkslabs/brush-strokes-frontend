@@ -60,6 +60,8 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
     if (this.isPointerDown === true || this.disabled === true) {
       return;
     }
+
+    this.clear();
     event.preventDefault();
     this.pointerId = event.pointerId;
 
@@ -89,7 +91,7 @@ export class OffscreenDrawableCanvas extends EventDispatcher {
       ),
     );
 
-    this.clear();
+    // this.clear();
   }
 
   public getCurrentImage(): CanvasRenderingContext2D {
