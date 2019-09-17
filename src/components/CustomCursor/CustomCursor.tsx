@@ -2,6 +2,7 @@ import React, { createRef, ReactNode, useCallback, useEffect, useState } from 'r
 import classNames from 'classnames';
 import styles from './CustomCursor.module.css';
 import { startLerp } from '../../lib/lerp';
+import { expoOut } from 'eases';
 
 interface Props {
   children: Array<ReactNode> | ReactNode;
@@ -94,7 +95,7 @@ const CustomCursor = ({
 
   useEffect(() => {
     if (outlineLerp === null) {
-      setOutlineLerp(startLerp(0, setOutlineRadius, 100));
+      setOutlineLerp(startLerp(0, setOutlineRadius, 200, expoOut));
     } else {
       outlineLerp.updateCallback(setOutlineRadius);
     }
@@ -131,6 +132,7 @@ const CustomCursor = ({
           strokeLinecap="round"
           fill="transparent"
           ref={outlineRef}
+          className={styles.cursorOutline}
         />
 
         <circle

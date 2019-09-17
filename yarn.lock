@@ -1363,6 +1363,11 @@
   resolved "https://registry.yarnpkg.com/@types/dat-gui/-/dat-gui-0.6.3.tgz#2285a22ee28fbed05f3932dda9144d18c9903b5d"
   integrity sha512-N0JUd1/jrKQ00w0lz6uyx/4XhJ+qQb9Ir05DEzP4YS5N+vQUyKtcyVBG/u+NF7EkAkHHYDyzpvYf0AMS89R2OQ==
 
+"@types/eases@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@types/eases/-/eases-1.0.0.tgz#9babb13831fb5dd5a03b648d3f8b6b057aaea7fa"
+  integrity sha512-uv9+zJStXd9DpFnQRuE8Ko7IrqOtKt0UiQketRjCAHIR8tg9dGfOnNMBBObsEc7/T2oey99X9fnpmi7fdxCuRQ==
+
 "@types/events@*":
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/@types/events/-/events-3.0.0.tgz#2862f3f58a9a7f7c3e78d79f130dd4d71c25c2a7"
@@ -3728,6 +3733,11 @@ duplexify@^3.4.2, duplexify@^3.6.0:
     inherits "^2.0.1"
     readable-stream "^2.0.0"
     stream-shift "^1.0.0"
+
+eases@^1.0.8:
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/eases/-/eases-1.0.8.tgz#f1f5069a6b6ed2ea510f9c6110398d63efe9aee6"
+  integrity sha1-8fUGmmtu0upRD5xhEDmNY+/pruY=
 
 ecc-jsbn@~0.1.1:
   version "0.1.2"
